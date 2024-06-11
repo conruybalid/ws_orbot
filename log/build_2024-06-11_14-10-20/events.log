@@ -1,0 +1,6 @@
+[0.000000] (-) TimerEvent: {}
+[0.000159] (-) JobUnselected: {'identifier': 'image_interfaces'}
+[0.000181] (-) JobUnselected: {'identifier': 'image_interfaces'}
+[0.000195] (-) JobUnselected: {'identifier': 'image_processing'}
+[0.000208] (-) JobUnselected: {'identifier': 'pick_apple'}
+[0.000222] (-) EventReactorShutdown: {}

@@ -1,0 +1,6 @@
+# ImageRequest.srv
+
+sensor_msgs/Image image
+---
+int16 num_apples
+geometry_msgs/Point[] apple_coordinates

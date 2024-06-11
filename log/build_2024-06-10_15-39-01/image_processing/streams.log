@@ -1,0 +1,26 @@
+[0.334s] Invoking command in '/home/bushwookie/ws_orbot/src/image_processing': PYTHONPATH=/home/bushwookie/ws_orbot/build/image_processing/prefix_override:/home/bushwookie/ws_orbot/install/image_processing/lib/python3.10/site-packages:${PYTHONPATH} WSLENV=ELECTRON_RUN_AS_NODE/w: /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base ../../build/image_processing build --build-base /home/bushwookie/ws_orbot/build/image_processing/build install --record /home/bushwookie/ws_orbot/build/image_processing/install.log --single-version-externally-managed install_data
+[0.463s] running egg_info
+[0.463s] writing ../../build/image_processing/image_processing.egg-info/PKG-INFO
+[0.463s] writing dependency_links to ../../build/image_processing/image_processing.egg-info/dependency_links.txt
+[0.464s] writing entry points to ../../build/image_processing/image_processing.egg-info/entry_points.txt
+[0.464s] writing requirements to ../../build/image_processing/image_processing.egg-info/requires.txt
+[0.464s] writing top-level names to ../../build/image_processing/image_processing.egg-info/top_level.txt
+[0.465s] reading manifest file '../../build/image_processing/image_processing.egg-info/SOURCES.txt'
+[0.465s] adding license file 'LICENSE'
+[0.465s] writing manifest file '../../build/image_processing/image_processing.egg-info/SOURCES.txt'
+[0.466s] running build
+[0.466s] running build_py
+[0.466s] copying image_processing/test_client_function.py -> /home/bushwookie/ws_orbot/build/image_processing/build/lib/image_processing
+[0.466s] running install
+[0.466s] running install_lib
+[0.467s] copying /home/bushwookie/ws_orbot/build/image_processing/build/lib/image_processing/test_client_function.py -> /home/bushwookie/ws_orbot/install/image_processing/lib/python3.10/site-packages/image_processing
+[0.467s] byte-compiling /home/bushwookie/ws_orbot/install/image_processing/lib/python3.10/site-packages/image_processing/test_client_function.py to test_client_function.cpython-310.pyc
+[0.468s] running install_data
+[0.468s] running install_egg_info
+[0.469s] removing '/home/bushwookie/ws_orbot/install/image_processing/lib/python3.10/site-packages/image_processing-0.0.0-py3.10.egg-info' (and everything under it)
+[0.469s] Copying ../../build/image_processing/image_processing.egg-info to /home/bushwookie/ws_orbot/install/image_processing/lib/python3.10/site-packages/image_processing-0.0.0-py3.10.egg-info
+[0.470s] running install_scripts
+[0.483s] Installing rgb_image_service script to /home/bushwookie/ws_orbot/install/image_processing/lib/image_processing
+[0.483s] Installing test_client script to /home/bushwookie/ws_orbot/install/image_processing/lib/image_processing
+[0.483s] writing list of installed files to '/home/bushwookie/ws_orbot/build/image_processing/install.log'
+[0.499s] Invoked command in '/home/bushwookie/ws_orbot/src/image_processing' returned '0': PYTHONPATH=/home/bushwookie/ws_orbot/build/image_processing/prefix_override:/home/bushwookie/ws_orbot/install/image_processing/lib/python3.10/site-packages:${PYTHONPATH} WSLENV=ELECTRON_RUN_AS_NODE/w: /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base ../../build/image_processing build --build-base /home/bushwookie/ws_orbot/build/image_processing/build install --record /home/bushwookie/ws_orbot/build/image_processing/install.log --single-version-externally-managed install_data

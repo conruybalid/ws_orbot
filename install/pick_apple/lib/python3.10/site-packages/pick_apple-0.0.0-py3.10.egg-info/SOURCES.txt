@@ -1,0 +1,16 @@
+LICENSE
+package.xml
+setup.cfg
+setup.py
+../../build/pick_apple/pick_apple.egg-info/PKG-INFO
+../../build/pick_apple/pick_apple.egg-info/SOURCES.txt
+../../build/pick_apple/pick_apple.egg-info/dependency_links.txt
+../../build/pick_apple/pick_apple.egg-info/entry_points.txt
+../../build/pick_apple/pick_apple.egg-info/requires.txt
+../../build/pick_apple/pick_apple.egg-info/top_level.txt
+../../build/pick_apple/pick_apple.egg-info/zip-safe
+pick_apple/__init__.py
+resource/pick_apple
+test/test_copyright.py
+test/test_flake8.py
+test/test_pep257.py

@@ -1,0 +1,42 @@
+[0.013s] Invoking command in '/home/bushwookie/ws_orbot/build/custom_interfaces': CMAKE_PREFIX_PATH=/opt/ros/humble WSLENV=ELECTRON_RUN_AS_NODE/w: /usr/bin/cmake /home/bushwookie/ws_orbot/src/custom_interfaces -DCMAKE_INSTALL_PREFIX=/home/bushwookie/ws_orbot/install/custom_interfaces
+[0.185s] -- The C compiler identification is GNU 11.4.0
+[0.619s] -- The CXX compiler identification is GNU 11.4.0
+[0.922s] -- Detecting C compiler ABI info
+[1.039s] -- Detecting C compiler ABI info - done
+[1.047s] -- Check for working C compiler: /usr/bin/cc - skipped
+[1.048s] -- Detecting C compile features
+[1.049s] -- Detecting C compile features - done
+[1.051s] -- Detecting CXX compiler ABI info
+[1.181s] -- Detecting CXX compiler ABI info - done
+[1.187s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[1.187s] -- Detecting CXX compile features
+[1.187s] -- Detecting CXX compile features - done
+[1.196s] -- Found ament_cmake: 1.3.9 (/opt/ros/humble/share/ament_cmake/cmake)
+[1.300s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[1.370s] -- Found ament_lint_auto: 0.12.11 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[1.426s] -- Added test 'lint_cmake' to check CMake code style
+[1.427s] -- Added test 'xmllint' to check XML markup files
+[1.430s] -- Configuring done
+[1.437s] -- Generating done
+[1.438s] -- Build files have been written to: /home/bushwookie/ws_orbot/build/custom_interfaces
+[1.443s] Invoked command in '/home/bushwookie/ws_orbot/build/custom_interfaces' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble WSLENV=ELECTRON_RUN_AS_NODE/w: /usr/bin/cmake /home/bushwookie/ws_orbot/src/custom_interfaces -DCMAKE_INSTALL_PREFIX=/home/bushwookie/ws_orbot/install/custom_interfaces
+[1.444s] Invoking command in '/home/bushwookie/ws_orbot/build/custom_interfaces': CMAKE_PREFIX_PATH=/opt/ros/humble WSLENV=ELECTRON_RUN_AS_NODE/w: /usr/bin/cmake --build /home/bushwookie/ws_orbot/build/custom_interfaces -- -j16 -l16
+[1.466s] Invoked command in '/home/bushwookie/ws_orbot/build/custom_interfaces' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble WSLENV=ELECTRON_RUN_AS_NODE/w: /usr/bin/cmake --build /home/bushwookie/ws_orbot/build/custom_interfaces -- -j16 -l16
+[1.485s] Invoking command in '/home/bushwookie/ws_orbot/build/custom_interfaces': CMAKE_PREFIX_PATH=/opt/ros/humble WSLENV=ELECTRON_RUN_AS_NODE/w: /usr/bin/cmake --install /home/bushwookie/ws_orbot/build/custom_interfaces
+[1.489s] -- Install configuration: ""
+[1.491s] -- Installing: /home/bushwookie/ws_orbot/install/custom_interfaces/share/ament_index/resource_index/package_run_dependencies/custom_interfaces
+[1.491s] -- Installing: /home/bushwookie/ws_orbot/install/custom_interfaces/share/ament_index/resource_index/parent_prefix_path/custom_interfaces
+[1.491s] -- Installing: /home/bushwookie/ws_orbot/install/custom_interfaces/share/custom_interfaces/environment/ament_prefix_path.sh
+[1.491s] -- Installing: /home/bushwookie/ws_orbot/install/custom_interfaces/share/custom_interfaces/environment/ament_prefix_path.dsv
+[1.492s] -- Installing: /home/bushwookie/ws_orbot/install/custom_interfaces/share/custom_interfaces/environment/path.sh
+[1.492s] -- Installing: /home/bushwookie/ws_orbot/install/custom_interfaces/share/custom_interfaces/environment/path.dsv
+[1.492s] -- Installing: /home/bushwookie/ws_orbot/install/custom_interfaces/share/custom_interfaces/local_setup.bash
+[1.492s] -- Installing: /home/bushwookie/ws_orbot/install/custom_interfaces/share/custom_interfaces/local_setup.sh
+[1.492s] -- Installing: /home/bushwookie/ws_orbot/install/custom_interfaces/share/custom_interfaces/local_setup.zsh
+[1.492s] -- Installing: /home/bushwookie/ws_orbot/install/custom_interfaces/share/custom_interfaces/local_setup.dsv
+[1.493s] -- Installing: /home/bushwookie/ws_orbot/install/custom_interfaces/share/custom_interfaces/package.dsv
+[1.493s] -- Installing: /home/bushwookie/ws_orbot/install/custom_interfaces/share/ament_index/resource_index/packages/custom_interfaces
+[1.494s] -- Installing: /home/bushwookie/ws_orbot/install/custom_interfaces/share/custom_interfaces/cmake/custom_interfacesConfig.cmake
+[1.494s] -- Installing: /home/bushwookie/ws_orbot/install/custom_interfaces/share/custom_interfaces/cmake/custom_interfacesConfig-version.cmake
+[1.494s] -- Installing: /home/bushwookie/ws_orbot/install/custom_interfaces/share/custom_interfaces/package.xml
+[1.496s] Invoked command in '/home/bushwookie/ws_orbot/build/custom_interfaces' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble WSLENV=ELECTRON_RUN_AS_NODE/w: /usr/bin/cmake --install /home/bushwookie/ws_orbot/build/custom_interfaces

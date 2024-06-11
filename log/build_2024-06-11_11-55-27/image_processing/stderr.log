@@ -1,0 +1,5 @@
+  File "/home/bushwookie/ws_orbot/install/image_processing/lib/python3.10/site-packages/image_processing/test_client_function.py", line 34
+    self.get_logger().info('Received response: %.2f' % (response.region_coordinates)
+                          ^
+SyntaxError: '(' was never closed
+

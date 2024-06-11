@@ -1,0 +1,159 @@
+[0.013s] Invoking command in '/home/bushwookie/ws_orbot/build/image_interfaces': CMAKE_PREFIX_PATH=/opt/ros/humble WSLENV=ELECTRON_RUN_AS_NODE/w: /usr/bin/cmake --build /home/bushwookie/ws_orbot/build/image_interfaces -- -j16 -l16
+[0.083s] [35m[1mConsolidate compiler generated dependencies of target image_interfaces__rosidl_generator_c[0m
+[0.086s] [  3%] Built target image_interfaces__cpp
+[0.092s] [ 12%] Built target image_interfaces__rosidl_generator_c
+[0.094s] [35m[1mConsolidate compiler generated dependencies of target image_interfaces__rosidl_typesupport_fastrtps_cpp[0m
+[0.096s] [35m[1mConsolidate compiler generated dependencies of target image_interfaces__rosidl_typesupport_introspection_cpp[0m
+[0.096s] [35m[1mConsolidate compiler generated dependencies of target image_interfaces__rosidl_typesupport_cpp[0m
+[0.100s] [ 12%] Built target ament_cmake_python_copy_image_interfaces
+[0.102s] [35m[1mConsolidate compiler generated dependencies of target image_interfaces__rosidl_typesupport_introspection_c[0m
+[0.103s] [35m[1mConsolidate compiler generated dependencies of target image_interfaces__rosidl_typesupport_fastrtps_c[0m
+[0.105s] [35m[1mConsolidate compiler generated dependencies of target image_interfaces__rosidl_typesupport_c[0m
+[0.109s] [ 22%] Built target image_interfaces__rosidl_typesupport_cpp
+[0.109s] [ 32%] Built target image_interfaces__rosidl_typesupport_introspection_cpp
+[0.110s] [ 41%] Built target image_interfaces__rosidl_typesupport_fastrtps_cpp
+[0.113s] [ 51%] Built target image_interfaces__rosidl_typesupport_introspection_c
+[0.114s] [ 61%] Built target image_interfaces__rosidl_typesupport_c
+[0.115s] [ 70%] Built target image_interfaces__rosidl_typesupport_fastrtps_c
+[0.131s] [ 70%] Built target image_interfaces
+[0.146s] [ 74%] Built target image_interfaces__py
+[0.154s] [35m[1mConsolidate compiler generated dependencies of target image_interfaces__rosidl_generator_py[0m
+[0.163s] [ 80%] Built target image_interfaces__rosidl_generator_py
+[0.171s] [35m[1mConsolidate compiler generated dependencies of target image_interfaces__rosidl_typesupport_fastrtps_c__pyext[0m
+[0.172s] [35m[1mConsolidate compiler generated dependencies of target image_interfaces__rosidl_typesupport_introspection_c__pyext[0m
+[0.174s] [35m[1mConsolidate compiler generated dependencies of target image_interfaces__rosidl_typesupport_c__pyext[0m
+[0.181s] [ 87%] Built target image_interfaces__rosidl_typesupport_introspection_c__pyext
+[0.182s] [ 93%] Built target image_interfaces__rosidl_typesupport_fastrtps_c__pyext
+[0.184s] [100%] Built target image_interfaces__rosidl_typesupport_c__pyext
+[0.250s] running egg_info
+[0.250s] writing image_interfaces.egg-info/PKG-INFO
+[0.251s] writing dependency_links to image_interfaces.egg-info/dependency_links.txt
+[0.251s] writing top-level names to image_interfaces.egg-info/top_level.txt
+[0.253s] reading manifest file 'image_interfaces.egg-info/SOURCES.txt'
+[0.253s] writing manifest file 'image_interfaces.egg-info/SOURCES.txt'
+[0.272s] [100%] Built target ament_cmake_python_build_image_interfaces_egg
+[0.280s] Invoked command in '/home/bushwookie/ws_orbot/build/image_interfaces' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble WSLENV=ELECTRON_RUN_AS_NODE/w: /usr/bin/cmake --build /home/bushwookie/ws_orbot/build/image_interfaces -- -j16 -l16
+[0.327s] Invoking command in '/home/bushwookie/ws_orbot/build/image_interfaces': CMAKE_PREFIX_PATH=/opt/ros/humble WSLENV=ELECTRON_RUN_AS_NODE/w: /usr/bin/cmake --install /home/bushwookie/ws_orbot/build/image_interfaces
+[0.335s] -- Install configuration: ""
+[0.336s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/ament_index/resource_index/rosidl_interfaces/image_interfaces
+[0.336s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces
+[0.336s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv
+[0.336s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail
+[0.336s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail/image_request__type_support.h
+[0.336s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail/image_request__functions.h
+[0.336s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail/image_request__functions.c
+[0.336s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail/image_request__struct.h
+[0.336s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/image_request.h
+[0.336s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/msg
+[0.337s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/msg/rosidl_generator_c__visibility_control.h
+[0.337s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/environment/library_path.sh
+[0.337s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/environment/library_path.dsv
+[0.337s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/lib/libimage_interfaces__rosidl_generator_c.so
+[0.338s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces
+[0.338s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv
+[0.338s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail
+[0.338s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail/image_request__rosidl_typesupport_fastrtps_c.h
+[0.338s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/msg
+[0.338s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/msg/rosidl_typesupport_fastrtps_c__visibility_control.h
+[0.338s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/lib/libimage_interfaces__rosidl_typesupport_fastrtps_c.so
+[0.339s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces
+[0.339s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv
+[0.339s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail
+[0.339s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail/image_request__rosidl_typesupport_introspection_c.h
+[0.339s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail/image_request__type_support.c
+[0.339s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/msg
+[0.340s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/msg/rosidl_typesupport_introspection_c__visibility_control.h
+[0.340s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/lib/libimage_interfaces__rosidl_typesupport_introspection_c.so
+[0.340s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/lib/libimage_interfaces__rosidl_typesupport_c.so
+[0.340s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces
+[0.340s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv
+[0.340s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail
+[0.340s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail/image_request__traits.hpp
+[0.340s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail/image_request__builder.hpp
+[0.340s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail/image_request__struct.hpp
+[0.341s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/image_request.hpp
+[0.341s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces
+[0.341s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv
+[0.341s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail
+[0.341s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail/image_request__rosidl_typesupport_fastrtps_cpp.hpp
+[0.341s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail/dds_fastrtps
+[0.341s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/msg
+[0.341s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/msg/rosidl_typesupport_fastrtps_cpp__visibility_control.h
+[0.342s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/lib/libimage_interfaces__rosidl_typesupport_fastrtps_cpp.so
+[0.342s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces
+[0.342s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv
+[0.342s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail
+[0.342s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail/image_request__rosidl_typesupport_introspection_cpp.hpp
+[0.342s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/include/image_interfaces/image_interfaces/srv/detail/image_request__type_support.cpp
+[0.343s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/lib/libimage_interfaces__rosidl_typesupport_introspection_cpp.so
+[0.343s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/lib/libimage_interfaces__rosidl_typesupport_cpp.so
+[0.343s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/environment/pythonpath.sh
+[0.343s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/environment/pythonpath.dsv
+[0.343s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces-0.0.0-py3.10.egg-info
+[0.343s] -- Installing: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces-0.0.0-py3.10.egg-info/SOURCES.txt
+[0.344s] -- Installing: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces-0.0.0-py3.10.egg-info/dependency_links.txt
+[0.344s] -- Installing: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces-0.0.0-py3.10.egg-info/PKG-INFO
+[0.344s] -- Installing: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces-0.0.0-py3.10.egg-info/top_level.txt
+[0.345s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces
+[0.345s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces/image_interfaces_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so
+[0.345s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces/_image_interfaces_s.ep.rosidl_typesupport_introspection_c.c
+[0.345s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces/image_interfaces_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so
+[0.345s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces/srv
+[0.345s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces/srv/__init__.py
+[0.345s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces/srv/_image_request_s.c
+[0.345s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces/srv/_image_request.py
+[0.345s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces/_image_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c
+[0.345s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces/_image_interfaces_s.ep.rosidl_typesupport_c.c
+[0.345s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces/libimage_interfaces__rosidl_generator_py.so
+[0.345s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces/__init__.py
+[0.346s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces/image_interfaces_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so
+[0.367s] Listing '/home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces'...
+[0.367s] Listing '/home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces/srv'...
+[0.371s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces/image_interfaces_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so
+[0.371s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces/image_interfaces_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so
+[0.372s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/local/lib/python3.10/dist-packages/image_interfaces/image_interfaces_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so
+[0.372s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/lib/libimage_interfaces__rosidl_generator_py.so
+[0.372s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/srv/ImageRequest.idl
+[0.372s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/srv/ImageRequest.srv
+[0.372s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/srv/ImageRequest_Request.msg
+[0.372s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/srv/ImageRequest_Response.msg
+[0.372s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/ament_index/resource_index/package_run_dependencies/image_interfaces
+[0.372s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/ament_index/resource_index/parent_prefix_path/image_interfaces
+[0.372s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/environment/ament_prefix_path.sh
+[0.372s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/environment/ament_prefix_path.dsv
+[0.373s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/environment/path.sh
+[0.373s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/environment/path.dsv
+[0.373s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/local_setup.bash
+[0.373s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/local_setup.sh
+[0.373s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/local_setup.zsh
+[0.373s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/local_setup.dsv
+[0.373s] -- Installing: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/package.dsv
+[0.374s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/ament_index/resource_index/packages/image_interfaces
+[0.374s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/export_image_interfaces__rosidl_generator_cExport.cmake
+[0.374s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/export_image_interfaces__rosidl_generator_cExport-noconfig.cmake
+[0.374s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/export_image_interfaces__rosidl_typesupport_fastrtps_cExport.cmake
+[0.374s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/export_image_interfaces__rosidl_typesupport_fastrtps_cExport-noconfig.cmake
+[0.374s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/image_interfaces__rosidl_typesupport_introspection_cExport.cmake
+[0.374s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/image_interfaces__rosidl_typesupport_introspection_cExport-noconfig.cmake
+[0.374s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/image_interfaces__rosidl_typesupport_cExport.cmake
+[0.374s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/image_interfaces__rosidl_typesupport_cExport-noconfig.cmake
+[0.374s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/export_image_interfaces__rosidl_generator_cppExport.cmake
+[0.375s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/export_image_interfaces__rosidl_typesupport_fastrtps_cppExport.cmake
+[0.375s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/export_image_interfaces__rosidl_typesupport_fastrtps_cppExport-noconfig.cmake
+[0.375s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/image_interfaces__rosidl_typesupport_introspection_cppExport.cmake
+[0.375s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/image_interfaces__rosidl_typesupport_introspection_cppExport-noconfig.cmake
+[0.376s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/image_interfaces__rosidl_typesupport_cppExport.cmake
+[0.376s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/image_interfaces__rosidl_typesupport_cppExport-noconfig.cmake
+[0.377s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/export_image_interfaces__rosidl_generator_pyExport.cmake
+[0.377s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/export_image_interfaces__rosidl_generator_pyExport-noconfig.cmake
+[0.377s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/rosidl_cmake-extras.cmake
+[0.377s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/ament_cmake_export_dependencies-extras.cmake
+[0.377s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/ament_cmake_export_include_directories-extras.cmake
+[0.377s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/ament_cmake_export_libraries-extras.cmake
+[0.377s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/ament_cmake_export_targets-extras.cmake
+[0.377s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/rosidl_cmake_export_typesupport_targets-extras.cmake
+[0.377s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/rosidl_cmake_export_typesupport_libraries-extras.cmake
+[0.377s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/image_interfacesConfig.cmake
+[0.377s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/cmake/image_interfacesConfig-version.cmake
+[0.377s] -- Up-to-date: /home/bushwookie/ws_orbot/install/image_interfaces/share/image_interfaces/package.xml
+[0.379s] Invoked command in '/home/bushwookie/ws_orbot/build/image_interfaces' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble WSLENV=ELECTRON_RUN_AS_NODE/w: /usr/bin/cmake --install /home/bushwookie/ws_orbot/build/image_interfaces

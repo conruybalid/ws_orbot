@@ -1,0 +1,6 @@
+source;share/pick_apple/hook/pythonpath.ps1
+source;share/pick_apple/hook/pythonpath.dsv
+source;share/pick_apple/hook/pythonpath.sh
+source;share/pick_apple/hook/ament_prefix_path.ps1
+source;share/pick_apple/hook/ament_prefix_path.dsv
+source;share/pick_apple/hook/ament_prefix_path.sh
