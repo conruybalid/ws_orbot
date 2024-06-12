@@ -1,21 +1,21 @@
 import os
 import rclpy
 from rclpy.node import Node
-from custom_interfaces.srv import ImageRequest
+from custom_interfaces.srv import ImageProcess
 import cv2
 from cv_bridge import CvBridge
 
 class ImageClient(Node):
     def __init__(self):
         super().__init__('image_client')
-        self.client = self.create_client(ImageRequest, 'rgb_image_processing')
+        self.client = self.create_client(ImageProcess, 'rgb_image_processing')
         while not self.client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Service not available, waiting...')
         self.request_image()
 
     def request_image(self):
-        request = ImageRequest.Request()
-        image_path = os.path.expanduser('~/apple2.JPG')  # Replace with your image path
+        request = ImageProcess.Request()
+        image_path = os.path.expanduser('~/ws_orbot/apple2.JPG')  # Replace with your image path
     
         cv_bridge = CvBridge()
         image = cv2.imread(image_path)
