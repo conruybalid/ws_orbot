@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 
-from custom_interfaces.srv import ImageRequest
+from custom_interfaces.srv import ImageProcess
 
 from cv_bridge import CvBridge
 #from ImageProcess import processImage
@@ -10,7 +10,7 @@ from image_processing.ImageProcess import processImage
 class ImageProcessingService(Node):
     def __init__(self):
         super().__init__('red_mask')
-        self.service = self.create_service(ImageRequest, 'rgb_image_processing', self.process_image_callback)
+        self.service = self.create_service(ImageProcess, 'rgb_image_processing', self.process_image_callback)
         self.imageNum = 0
 
     def process_image_callback(self, request, response):
