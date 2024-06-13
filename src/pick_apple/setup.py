@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'pick_apple_action_server = pick_apple.pick_apple:main',
         ],
     },
 )

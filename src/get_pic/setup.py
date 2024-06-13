@@ -20,6 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'video_publisher = get_pic.videoPublisher:main',
+            'video_subscriber = get_pic.videoSubscriber:main',
         ],
     },
 )
