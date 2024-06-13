@@ -78,10 +78,22 @@ class PickAppleServer(Node):
         goal_handle.publish_feedback(feedback_msg)
 
 
+        # scale the coordinates
+        zDesire = 640;  
+        zDist = zDesire - apple_coordinates[0].y
+        zChange = 0.00025*zDist
+
+        yDesire = 300;  #was 420
+        yDist = yDesire - apple_coordinates[0].x
+        yChange = 0.00025*yDist
+
+        apple_coordinates[0].x = 0.0
+        apple_coordinates[0].y = yChange
+        apple_coordinates[0].z = zChange
  
         # Publish Arm Movement
         self.publish_arm_movement(apple_coordinates[0])
-        feedback_msg.feedback = f'moved to {apple_coordinates[0].x}, {apple_coordinates[0].y}'  
+        feedback_msg.feedback = f'moved to {apple_coordinates[0].y}, {apple_coordinates[0].z}'  
         goal_handle.publish_feedback(feedback_msg)
 
         goal_handle.succeed()
