@@ -1,2 +1,0 @@
-Invoking command in '/home/bushwookie/ws_orbot/build/image_interfaces': CMAKE_PREFIX_PATH=/opt/ros/humble WSLENV=ELECTRON_RUN_AS_NODE/w: /usr/bin/cmake /home/bushwookie/ws_orbot/src/image_interfaces -DCMAKE_INSTALL_PREFIX=/home/bushwookie/ws_orbot/install/image_interfaces
-Invoked command in '/home/bushwookie/ws_orbot/build/image_interfaces' returned '1': CMAKE_PREFIX_PATH=/opt/ros/humble WSLENV=ELECTRON_RUN_AS_NODE/w: /usr/bin/cmake /home/bushwookie/ws_orbot/src/image_interfaces -DCMAKE_INSTALL_PREFIX=/home/bushwookie/ws_orbot/install/image_interfaces

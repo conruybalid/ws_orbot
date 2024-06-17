@@ -1,6 +1,0 @@
-{
-  "package_name": "image_interfaces",
-  "non_idl_tuples": [
-    "/home/bushwookie/ws_orbot/src/image_interfaces:srv/ImageRequest.srv"
-  ]
-}

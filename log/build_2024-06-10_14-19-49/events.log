@@ -1,4 +1,0 @@
-[0.000000] (-) TimerEvent: {}
-[0.000782] (-) JobUnselected: {'identifier': 'image_interfaces'}
-[0.000831] (-) JobUnselected: {'identifier': 'image_processing'}
-[0.000844] (-) EventReactorShutdown: {}
