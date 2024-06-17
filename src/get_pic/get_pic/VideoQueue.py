@@ -3,9 +3,12 @@ import threading
 import time
 
 class VideoStreamHandler:
-    def __init__(self, rtsp_url):
+    def __init__(self, rtsp_url, gstreamer=False):
         self.rtsp_url = rtsp_url
-        self.cap = cv2.VideoCapture(rtsp_url)
+        if not gstreamer:
+            self.cap = cv2.VideoCapture(rtsp_url)
+        else:
+            self.cap = cv2.VideoCapture(rtsp_url, cv2.CAP_GSTREAMER)
         self.latest_frame = None
         self.running = True
         self.read_thread = threading.Thread(target=self.update_frame)

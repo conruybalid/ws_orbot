@@ -186,8 +186,17 @@ def main():
             # Get the coordinates from the user
             coordinates = get_coordinates_from_user()
 
+                        # Assuming base_cyclic is your BaseCyclic object and you've already connected to the robot
+            feedback = base_cyclic.RefreshFeedback()
+
+            # Accessing the X, Y, Z position of the tool
+            tool_x = feedback.base.tool_pose_x
+            tool_y = feedback.base.tool_pose_y
+            tool_z = feedback.base.tool_pose_z
+
+
             # Update the waypointsDefinition with the new coordinates
-            waypointsDefinition = (coordinates[0], coordinates[1], coordinates[2], 0.0, 90.0, 0.0, 90.0)
+            waypointsDefinition = (coordinates[0] + tool_x, coordinates[1] + tool_y, coordinates[2] + tool_z, 0.0, 90.0, 0.0, 90.0)
 
             success &= example_trajectory(base, base_cyclic, waypointsDefinition)
        

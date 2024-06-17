@@ -6,12 +6,14 @@ import cv2
 from cv_bridge import CvBridge
 
 import os
+import time
 
 from custom_interfaces.action import PickApple
 from custom_interfaces.srv import ImageProcess
 from custom_interfaces.srv import ImageRequest
 
 from pick_apple.ImageProcess import processImage
+from pick_apple.GetDepth import GetDepth
 
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
@@ -32,8 +34,10 @@ class PickAppleServer(Node):
             self.execute_callback)
         
         self.image_msg = Image()
+        self.depth_msg = Image()
 
         self.image_sub = self.create_subscription(Image, 'image_topic', self.image_callback, 10)
+        self.depth_sub = self.create_subscription(Image, 'depth_topic', self.depth_callback, 10)
 
         self.process_client = self.create_client(ImageProcess, 'rgb_image_processing')
         self.process_request = ImageProcess.Request()
@@ -46,6 +50,10 @@ class PickAppleServer(Node):
     def image_callback(self, msg):
         self.image_msg = msg
 
+    def depth_callback(self, msg):
+        self.depth_msg = msg
+
+
     def execute_callback(self, goal_handle):
         self.get_logger().info('Executing goal...')
         feedback_msg = PickApple.Feedback()
@@ -54,11 +62,12 @@ class PickAppleServer(Node):
         
 
         
-        feedback_msg.feedback = 'Waiting For Image' 
-        goal_handle.publish_feedback(feedback_msg)
+        
         while self.image_msg is None:
+            feedback_msg.feedback = 'Waiting For Image' 
+            goal_handle.publish_feedback(feedback_msg)
             pass 
-        feedback_msg.feedback = 'Got Image'  
+        feedback_msg.feedback = 'Got rgb Image'  
         goal_handle.publish_feedback(feedback_msg)
         
 
@@ -71,54 +80,82 @@ class PickAppleServer(Node):
 
 
 #---------------------Fine I'll do it myself---------------------#
+        for i in range(0, 1):
 
-        image = CvBridge().imgmsg_to_cv2(self.image_msg)
-        num_apples, apple_coordinates, maskedImage = processImage(image, self.imageNum)
-        self.get_logger().info('found %.d apples' % num_apples)
-        for apple in apple_coordinates:
-            self.get_logger().info('Location: %.2f, %.2f' % (apple.x, apple.y))
+            print(i)
 
-        feedback_msg.feedback = 'Processed Image'
-        goal_handle.publish_feedback(feedback_msg)
+            image = CvBridge().imgmsg_to_cv2(self.image_msg)
+            num_apples, apple_coordinates, maskedImage = processImage(image, self.imageNum)
+            self.get_logger().info('found %.d apples' % num_apples)
+            for apple in apple_coordinates:
+                self.get_logger().info('Location: %.2f, %.2f' % (apple.x, apple.y))
 
-        mask_msg = CvBridge().cv2_to_imgmsg(cv2.multiply(maskedImage,255))
-        self.Masked_publisher.publish(mask_msg)
+            feedback_msg.feedback = 'Processed Image'
+            goal_handle.publish_feedback(feedback_msg)
 
-        if num_apples == 0:
+            mask_msg = CvBridge().cv2_to_imgmsg(cv2.multiply(maskedImage,255))
+            self.Masked_publisher.publish(mask_msg)
+
+            if num_apples == 0:
+                result = PickApple.Result()
+                result.result = 'No Apples Found'
+                goal_handle.abort()
+                self.get_logger().info('No apples found')
+    
+                return result
+
+
+            # scale the coordinates
+            
+            yDesire = 640; 
+            yDist = yDesire - apple_coordinates[0].x
+            yChange = 0.00030*yDist
+            
+            zDesire = 420; #was 420 
+            zDist = zDesire - apple_coordinates[0].y
+            zChange = 0.00025*zDist
+
+            apple_coordinates[0].x = 0.0
+            apple_coordinates[0].y = yChange
+            apple_coordinates[0].z = zChange
+    
+            # Publish Arm Movement
+            self.publish_arm_movement(apple_coordinates[0])
+            
+            feedback_msg.feedback = f'moved to {apple_coordinates[0].y}, {apple_coordinates[0].z}'  
+            goal_handle.publish_feedback(feedback_msg)
+            
+
+
+        dist = GetDepth(CvBridge().imgmsg_to_cv2(self.depth_msg))
+
+        if not dist == None:
+            feedback_msg.feedback = f'found apple at distance {dist}'  
+            goal_handle.publish_feedback(feedback_msg)
+
+            depthMove = Point()
+
+            depthMove.x = dist
+            depthMove.y = 0.0
+            depthMove.z = 0.0
+
+           # self.publish_arm_movement(depthMove)
+
+        else:
             result = PickApple.Result()
-            result.result = 'No Apples Found'
+            result.result = 'No Depth Found'
             goal_handle.abort()
-            self.get_logger().info('No apples found')
+            self.get_logger().info('No depth found')
  
             return result
 
 
-        # scale the coordinates
-        
-        yDesire = 640; 
-        yDist = yDesire - apple_coordinates[0].x
-        yChange = 0.00025*yDist
-        
-        zDesire = 420; #was 420 
-        zDist = zDesire - apple_coordinates[0].y
-        zChange = 0.00025*zDist
-
-        apple_coordinates[0].x = 0.0
-        apple_coordinates[0].y = yChange
-        apple_coordinates[0].z = zChange
- 
-        # Publish Arm Movement
-        self.publish_arm_movement(apple_coordinates[0])
-        
-        
-        feedback_msg.feedback = f'moved to {apple_coordinates[0].y}, {apple_coordinates[0].z}'  
-        goal_handle.publish_feedback(feedback_msg)
 
         goal_handle.succeed()
         self.get_logger().info('Success')
 
         result = PickApple.Result()
-        result.result = 'No Apples Found'
+        result.result = 'Success'
         return result
 
 
