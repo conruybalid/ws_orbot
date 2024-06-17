@@ -14,6 +14,7 @@ from custom_interfaces.srv import ImageRequest
 from pick_apple.ImageProcess import processImage
 
 from sensor_msgs.msg import Image
+from geometry_msgs.msg import Point
 
 
 
@@ -38,6 +39,9 @@ class PickAppleServer(Node):
         self.process_request = ImageProcess.Request()
 
         self.imageNum = 0
+
+        self.move_publisher = self.create_publisher(Point, 'arm_move', 10)
+        self.Masked_publisher = self.create_publisher(Image, 'masked_image_topic', 10)
 
     def image_callback(self, msg):
         self.image_msg = msg
@@ -69,7 +73,7 @@ class PickAppleServer(Node):
 #---------------------Fine I'll do it myself---------------------#
 
         image = CvBridge().imgmsg_to_cv2(self.image_msg)
-        num_apples, apple_coordinates = processImage(image, self.imageNum)
+        num_apples, apple_coordinates, maskedImage = processImage(image, self.imageNum)
         self.get_logger().info('found %.d apples' % num_apples)
         for apple in apple_coordinates:
             self.get_logger().info('Location: %.2f, %.2f' % (apple.x, apple.y))
@@ -77,15 +81,27 @@ class PickAppleServer(Node):
         feedback_msg.feedback = 'Processed Image'
         goal_handle.publish_feedback(feedback_msg)
 
+        mask_msg = CvBridge().cv2_to_imgmsg(cv2.multiply(maskedImage,255))
+        self.Masked_publisher.publish(mask_msg)
+
+        if num_apples == 0:
+            result = PickApple.Result()
+            result.result = 'No Apples Found'
+            goal_handle.abort()
+            self.get_logger().info('No apples found')
+ 
+            return result
+
 
         # scale the coordinates
-        zDesire = 640;  
-        zDist = zDesire - apple_coordinates[0].y
-        zChange = 0.00025*zDist
-
-        yDesire = 300;  #was 420
+        
+        yDesire = 640; 
         yDist = yDesire - apple_coordinates[0].x
         yChange = 0.00025*yDist
+        
+        zDesire = 420; #was 420 
+        zDist = zDesire - apple_coordinates[0].y
+        zChange = 0.00025*zDist
 
         apple_coordinates[0].x = 0.0
         apple_coordinates[0].y = yChange
@@ -93,6 +109,8 @@ class PickAppleServer(Node):
  
         # Publish Arm Movement
         self.publish_arm_movement(apple_coordinates[0])
+        
+        
         feedback_msg.feedback = f'moved to {apple_coordinates[0].y}, {apple_coordinates[0].z}'  
         goal_handle.publish_feedback(feedback_msg)
 
@@ -100,11 +118,14 @@ class PickAppleServer(Node):
         self.get_logger().info('Success')
 
         result = PickApple.Result()
-        result.result = 'Success'
+        result.result = 'No Apples Found'
         return result
 
 
-
+    
+    def publish_arm_movement(self, msg):
+        self.move_publisher.publish(msg)
+        self.get_logger().info('Published Arm Movement')
 
     def test_image(self):
         image_path = os.path.expanduser('~/ws_orbot/apple2.JPG')  # Replace with your image path
@@ -138,10 +159,6 @@ class PickAppleServer(Node):
     #         self.get_logger().error('Image Process Service call failed: %s' % e)
     #         return None
         
-    def publish_arm_movement(self, msg):
-        pass
-        # self.move_publisher.publish(msg)
-        # self.get_logger().info('Published Arm Movement')
 
         
 

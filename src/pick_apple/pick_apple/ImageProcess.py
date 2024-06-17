@@ -95,6 +95,9 @@ def processImage(image, imageNum):
             x, y, w, h = cv2.boundingRect(contour)
             cv2.rectangle(redObjectsMask4, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
+    else:
+        apple_centroids = None
+
     # Display the image
     # cv2.imshow('Apples', cv2.multiply(redObjectsMask4,255))
     # cv2.waitKey(0)
@@ -107,14 +110,15 @@ def processImage(image, imageNum):
     num_apples = len(contours)
     # Create a list of geometry msg points
     apple_points = []
-    for centroid in apple_centroids:
-        point = Point()
-        point.x = centroid[0]
-        point.y = centroid[1]
-        point.z = 0.0
-        apple_points.append(point)
+    if not apple_centroids is None:
+        for centroid in apple_centroids:
+            point = Point()
+            point.x = centroid[0]
+            point.y = centroid[1]
+            point.z = 0.0
+            apple_points.append(point)
 
-    return num_apples, apple_points
+    return num_apples, apple_points, redObjectsMask4
 
 
 if __name__ == "__main__":

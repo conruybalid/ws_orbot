@@ -1,4 +1,0 @@
-srv/ImageRequest.idl
-srv/ImageRequest.srv
-srv/ImageRequest_Request.msg
-srv/ImageRequest_Response.msg
