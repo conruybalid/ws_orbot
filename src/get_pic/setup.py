@@ -22,6 +22,7 @@ setup(
         'console_scripts': [
             'video_publisher = get_pic.videoPublisher:main',
             'video_subscriber = get_pic.videoSubscriber:main',
+            'masked_image_subscriber = get_pic.MaskImageSubscriber:main',
         ],
     },
 )

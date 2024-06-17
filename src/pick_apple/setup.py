@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'pick_apple_action_server = pick_apple.pick_apple:main',
+            'search_apple = pick_apple.search_apple:main',
         ],
     },
 )
