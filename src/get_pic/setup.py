@@ -23,6 +23,8 @@ setup(
             'video_publisher = get_pic.videoPublisher:main',
             'video_subscriber = get_pic.videoSubscriber:main',
             'masked_image_subscriber = get_pic.MaskImageSubscriber:main',
+            'zed_subscriber = get_pic.zed_subscriber:main',
+            'zed_publisher = get_pic.zed_publisher:main',
         ],
     },
 )
