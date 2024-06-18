@@ -15,10 +15,24 @@ class VideoSubscriber(Node):
         )
         self.subscription
 
+        self.depth_subscription = self.create_subscription(
+            Image,
+            'depth_topic',
+            self.depth_callback,
+            10
+        )
+        self.subscription
+
         self.bridge = CvBridge()
 
     def image_callback(self, msg):
         self.get_logger().info('Received an image')
+        cv_image = self.bridge.imgmsg_to_cv2(msg)
+        cv2.imshow('Image', cv_image)
+        cv2.waitKey(1)
+
+    def depth_callback(self, msg):
+        self.get_logger().info('Received a depth image')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
         cv2.imshow('Image', cv_image)
         cv2.waitKey(1)
