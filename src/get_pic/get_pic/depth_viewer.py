@@ -22,10 +22,23 @@ while True:
         break
 
     # Convert the frame to grayscale
-    gray = cv2.cvtColor(frame , cv2.COLOR_BGR2RGBA)
+    #gray = cv2.cvtColor(frame , cv2.COLOR_BGR2RGBA)
+    # Calculate the average depth value from the center of the depth image
+    height, width = frame.shape
+    center_x = width // 2
+    center_y = height // 2
+    depth_values = frame[center_y-10:center_y+10, center_x-10:center_x+10]
+    average_depth = depth_values.mean()
+
+    # Output the average distance
+    print(f"Average distance: {average_depth} units")
+    # Check if the 'q' key was pressed to exit the loop
+    send_depth = average_depth * .350
+    print(send_depth)
 
     # Display the grayscale frame (depth map)
     cv2.imshow('Depth Map' , frame)
+    print(frame[135][240])
 
     # Check if the 'q' key was pressed to exit the loop
     if cv2.waitKey(1) & 0xFF == ord('q'):
