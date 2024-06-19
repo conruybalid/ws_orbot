@@ -25,6 +25,7 @@ setup(
             'masked_image_subscriber = get_pic.MaskImageSubscriber:main',
             'zed_subscriber = get_pic.zed_subscriber:main',
             'zed_publisher = get_pic.zed_publisher:main',
+            'zed_distance_pub = get_pic.zed_distance_pub:main',
         ],
     },
 )
