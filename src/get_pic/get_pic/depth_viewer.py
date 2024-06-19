@@ -5,6 +5,9 @@ rtsp_url = 'rtsp://192.168.1.10/depth'
 
 # Create a VideoCapture object to read the RTSP stream
 cap = cv2.VideoCapture(rtsp_url,cv2.CAP_GSTREAMER)
+cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc('Y','1','6',' '))
+# cap.set(cv2.CAP_PROP_FORMAT, cv2.CV_16U)
+cap.set(cv2.CAP_PROP_CONVERT_RGB, False) 
 
 # Check if the VideoCapture object was successfully opened
 if not cap.isOpened():
@@ -27,7 +30,8 @@ while True:
     height, width = frame.shape
     center_x = width // 2
     center_y = height // 2
-    depth_values = frame[center_y-10:center_y+10, center_x-10:center_x+10]
+    depth_values = frame[center_y-2:center_y+2, center_x-2:center_x+2]
+    print(depth_values)
     average_depth = depth_values.mean()
 
     # Output the average distance
