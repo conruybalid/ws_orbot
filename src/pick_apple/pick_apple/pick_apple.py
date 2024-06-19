@@ -18,6 +18,7 @@ from pick_apple.GetDepth import GetDepth
 
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
+from std_msgs.msg import Float32
 
 
 
@@ -39,6 +40,7 @@ class PickAppleServer(Node):
 
         self.image_sub = self.create_subscription(Image, 'image_topic', self.image_callback, 10)
         self.depth_sub = self.create_subscription(Image, 'depth_topic', self.depth_callback, 10)
+        self.distance_sub = self.create_subscription(Float32, 'zed_distance_topic', self.distance_callback, 10)
 
         self.process_client = self.create_client(ImageProcess, 'rgb_image_processing')
         self.process_request = ImageProcess.Request()
@@ -46,6 +48,7 @@ class PickAppleServer(Node):
         self.imageNum = 0
 
         self.move_publisher = self.create_publisher(ArmControl, 'arm_move', 10)
+        self.absolute_move_publisher = self.create_publisher(ArmControl, 'absolute_arm_move', 10)
         self.Masked_publisher = self.create_publisher(Image, 'masked_image_topic', 10)
 
     def image_callback(self, msg):
@@ -53,6 +56,9 @@ class PickAppleServer(Node):
 
     def depth_callback(self, msg):
         self.depth_msg = msg
+
+    def distance_callback(self, msg):
+        self.distance_msg = msg
 
 
     def execute_callback(self, goal_handle):
@@ -127,33 +133,49 @@ class PickAppleServer(Node):
             goal_handle.publish_feedback(feedback_msg)
             
 
+        dist = self.distance_msg.data
 
-        try:
-            dist = GetDepth(CvBridge().imgmsg_to_cv2(self.depth_msg))
-        except:
-            dist = None
-            self.get_logger().info('depth could not be converted')
+        feedback_msg.feedback = f'found apple at absolute distance {dist}'
+
+        arm_msg = ArmControl()
+        arm_msg.position.x = dist
+        arm_msg.position.y = 99
+        arm_msg.position.z = 99
+        arm_msg.gripper_state = 0
+
+        self.absolute_move_publisher.publish(arm_msg)
+
+        self.publish_arm_movement([0.0, 0.0, 0.07], 0)
+        #self.publish_arm_movement([0.0, 0.0, 0.0], 1)
 
 
-        if not dist == None:
-            feedback_msg.feedback = f'found apple at distance {dist}'  
-            goal_handle.publish_feedback(feedback_msg)
+        
+        # try:
+        #     dist = GetDepth(CvBridge().imgmsg_to_cv2(self.depth_msg))
+        # except:
+        #     dist = None
+        #     self.get_logger().info('depth could not be converted')
 
-            depthMove = Point()
 
-            depthMove.x = dist
-            depthMove.y = 0.0
-            depthMove.z = 0.0
+        # if not dist == None:
+        #     feedback_msg.feedback = f'found apple at distance {dist}'  
+        #     goal_handle.publish_feedback(feedback_msg)
 
-           # self.publish_arm_movement(depthMove)
+        #     depthMove = Point()
 
-        else:
-            result = PickApple.Result()
-            result.result = 'No Depth Found'
-            goal_handle.abort()
-            self.get_logger().info('No depth found')
+        #     depthMove.x = dist
+        #     depthMove.y = 0.0
+        #     depthMove.z = 0.0
+
+        #    # self.publish_arm_movement(depthMove)
+
+        # else:
+        #     result = PickApple.Result()
+        #     result.result = 'No Depth Found'
+        #     goal_handle.abort()
+        #     self.get_logger().info('No depth found')
  
-            return result
+        #     return result
 
 
 

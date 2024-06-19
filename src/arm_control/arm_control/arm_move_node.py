@@ -93,8 +93,21 @@ class ArmMoveSubscriber(Node):
             
             feedback = base_cyclic.RefreshFeedback()
 
+            # Accessing the X, Y, Z position of the tool
+            arm_x = feedback.base.tool_pose_x
+            arm_y = feedback.base.tool_pose_y
+            arm_z = feedback.base.tool_pose_z
+
+            if point.x == 99.0:
+                point.x = arm_x
+            if point.y == 99.0:
+                point.y = arm_y
+            if point.z == 99.0:
+                point.z = arm_z
+
             # Get the coordinates from the user
             coordinates = [point.x, point.y, point.z]
+
 
             success = True   
 
