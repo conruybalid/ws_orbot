@@ -65,7 +65,7 @@ if status != sl.ERROR_CODE.SUCCESS:
 # Create a ZED camera
 zed = sl.Camera()
 init_params = sl.InitParameters()
-init_params.sdk_verbose = True # Enable verbose logging
+init_params.sdk_verbose = 1 # Enable verbose logging
 init_params.depth_mode = sl.DEPTH_MODE.PERFORMANCE # Set the depth mode to performance (fastest)
 init_params.coordinate_units = sl.UNIT.MILLIMETER  # Use meter units
 
@@ -135,8 +135,8 @@ if len(contours) > 0:
     # y_distance = center_y * depth_value[1] /height
    
     depth_value = depth_value[1] - 200 # Get the depth value in mm
-
-    print("Depth at center of red mask: {} mm".format(depth_value))
+    depth_value = depth_value/1000 # Convert the depth value to meters
+    print("Depth at center of red mask: {} m".format(depth_value))
     # print("Distance from left of the image (x-axis): {} meters".format(x_distance))
     # print("Distance from top of the image (y-axis): {} meters".format(y_distance))
 else:
