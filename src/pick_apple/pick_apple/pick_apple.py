@@ -11,6 +11,7 @@ import time
 from custom_interfaces.action import PickApple
 from custom_interfaces.srv import ImageProcess
 from custom_interfaces.srv import ImageRequest
+from custom_interfaces.msg import ArmControl
 
 from pick_apple.ImageProcess import processImage
 from pick_apple.GetDepth import GetDepth
@@ -44,7 +45,7 @@ class PickAppleServer(Node):
 
         self.imageNum = 0
 
-        self.move_publisher = self.create_publisher(Point, 'arm_move', 10)
+        self.move_publisher = self.create_publisher(ArmControl, 'arm_move', 10)
         self.Masked_publisher = self.create_publisher(Image, 'masked_image_topic', 10)
 
     def image_callback(self, msg):
@@ -120,14 +121,19 @@ class PickAppleServer(Node):
             apple_coordinates[0].z = zChange
     
             # Publish Arm Movement
-            self.publish_arm_movement(apple_coordinates[0])
+            self.publish_arm_movement(apple_coordinates[0], 0)
             
             feedback_msg.feedback = f'moved to {apple_coordinates[0].y}, {apple_coordinates[0].z}'  
             goal_handle.publish_feedback(feedback_msg)
             
 
 
-        dist = GetDepth(CvBridge().imgmsg_to_cv2(self.depth_msg))
+        try:
+            dist = GetDepth(CvBridge().imgmsg_to_cv2(self.depth_msg))
+        except:
+            dist = None
+            self.get_logger().info('depth could not be converted')
+
 
         if not dist == None:
             feedback_msg.feedback = f'found apple at distance {dist}'  
@@ -160,7 +166,10 @@ class PickAppleServer(Node):
 
 
     
-    def publish_arm_movement(self, msg):
+    def publish_arm_movement(self, position, gripper_state):
+        msg = ArmControl()
+        msg.position = position
+        msg.gripper_state = gripper_state
         self.move_publisher.publish(msg)
         self.get_logger().info('Published Arm Movement')
 
