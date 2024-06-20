@@ -114,7 +114,10 @@ class ArmMoveSubscriber(Node):
             # Update the waypointsDefinition with the new coordinates
             waypointsDefinition = (coordinates[0], coordinates[1], coordinates[2], 0.0, 90.0, 0.0, 90.0)
 
-            success &= example_trajectory(base, base_cyclic, waypointsDefinition)
+            try:
+                success &= example_trajectory(base, base_cyclic, waypointsDefinition)
+            except:
+                self.get_logger().info('Error in trajectory')
 
             self.get_logger().info('Moved to position: %f, %f, %f' % (feedback.base.tool_pose_x, feedback.base.tool_pose_y, feedback.base.tool_pose_z))
 
@@ -128,8 +131,12 @@ class ArmMoveSubscriber(Node):
         finger = gripper_command.gripper.finger.add()
         gripper_request = Base_pb2.GripperRequest()
 
-
+        # Do nothing with the gripper
         if gripper_state == 0:
+            pass
+
+        # Open Gripper
+        elif gripper_state == 1:
             # Set speed to open gripper
             print ("Opening gripper using speed command...")
             gripper_command.mode = Base_pb2.GRIPPER_SPEED
@@ -149,14 +156,15 @@ class ArmMoveSubscriber(Node):
 
             self.get_logger().info('Gripper opened')
 
-        elif gripper_state == 1:
+        # Close Gripper
+        elif gripper_state == 2:
             # Set speed to close gripper
             print ("Closing gripper using speed command...")
             gripper_command.mode = Base_pb2.GRIPPER_SPEED
             finger.value = -0.05
             base.SendGripperCommand(gripper_command)
 
-            time.sleep(0.02)
+            time.sleep(0.05)
 
             # Wait for reported speed to be 0
             gripper_request.mode = Base_pb2.GRIPPER_SPEED
