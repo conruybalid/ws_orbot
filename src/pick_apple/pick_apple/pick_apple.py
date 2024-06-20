@@ -12,6 +12,7 @@ from custom_interfaces.action import PickApple
 from custom_interfaces.srv import ImageProcess
 from custom_interfaces.srv import ImageRequest
 from custom_interfaces.msg import ArmControl
+from typing import Union, List
 
 from pick_apple.ImageProcess import processImage
 from pick_apple.GetDepth import GetDepth
@@ -41,6 +42,9 @@ class PickAppleServer(Node):
         self.image_sub = self.create_subscription(Image, 'image_topic', self.image_callback, 10)
         self.depth_sub = self.create_subscription(Image, 'depth_topic', self.depth_callback, 10)
         self.distance_sub = self.create_subscription(Float32, 'zed_distance_topic', self.distance_callback, 10)
+        self.image_msg = None
+        self.depth_msg = None
+        self.distance_msg = None
 
         self.process_client = self.create_client(ImageProcess, 'rgb_image_processing')
         self.process_request = ImageProcess.Request()
@@ -116,7 +120,7 @@ class PickAppleServer(Node):
             
             yDesire = 640; 
             yDist = yDesire - apple_coordinates[0].x
-            yChange = 0.00030*yDist
+            yChange = 0.00040*yDist
             
             zDesire = 420; #was 420 
             zDist = zDesire - apple_coordinates[0].y
@@ -133,21 +137,28 @@ class PickAppleServer(Node):
             goal_handle.publish_feedback(feedback_msg)
             
 
-        dist = self.distance_msg.data
+        if self.distance_msg is not None:
 
-        feedback_msg.feedback = f'found apple at absolute distance {dist}'
+            feedback_msg.feedback = f'found apple at absolute distance {self.distance_msg.data}'
 
-        arm_msg = ArmControl()
-        arm_msg.position.x = dist
-        arm_msg.position.y = 99
-        arm_msg.position.z = 99
-        arm_msg.gripper_state = 0
+            arm_msg = ArmControl()
+            arm_msg.position.x = self.distance_msg.data
+            arm_msg.position.y = 99
+            arm_msg.position.z = 99
+            arm_msg.gripper_state = 0
 
-        self.absolute_move_publisher.publish(arm_msg)
+            self.absolute_move_publisher.publish(arm_msg)
+        else:
+            self.get_logger().info('No depth found')
 
-        self.publish_arm_movement([0.0, 0.0, 0.07], 0)
-        #self.publish_arm_movement([0.0, 0.0, 0.0], 1)
+        # arm_msg.position.x = 0.0
+        # arm_msg.position.y = 0.0
+        # arm_msg.position.z = 0.7
+        # arm_msg.gripper_state = 1
 
+        self.publish_arm_movement([0.0, 0.0, 0.05], 2)
+        self.publish_arm_movement([-0.2, 0.0, 0.0], 0)
+        self.publish_arm_movement([0.0, 0.0, 0.0], 1)
 
         
         # try:
@@ -187,13 +198,21 @@ class PickAppleServer(Node):
         return result
 
 
-    
-    def publish_arm_movement(self, position, gripper_state):
+    def publish_arm_movement(self, position: Union[Point, List[float]], gripper_state):
         msg = ArmControl()
-        msg.position = position
+        if isinstance(position, Point):
+            msg.position = position
+        elif isinstance(position, list):
+            msg.position.x = position[0]
+            msg.position.y = position[1]
+            msg.position.z = position[2]
+        else:
+            self.get_logger().error('Invalid position type')
+            return
         msg.gripper_state = gripper_state
         self.move_publisher.publish(msg)
         self.get_logger().info('Published Arm Movement')
+
 
     def test_image(self):
         image_path = os.path.expanduser('~/ws_orbot/apple2.JPG')  # Replace with your image path
