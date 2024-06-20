@@ -4,6 +4,7 @@ from custom_interfaces.action import PickApple
 
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
+from custom_interfaces.msg import ArmControl
 
 from pick_apple.ImageProcess import processImage
 
@@ -20,20 +21,25 @@ class LookAround(Node):
 
         self.image_sub = self.create_subscription(Image, 'image_topic', self.image_callback, 10)
         self.image_msg = Image()
-        self.found_apple = False
+        self.end_node = False
 
-        self.move_publisher = self.create_publisher(Point, 'absolute_arm_move', 10)
+        self.move_publisher = self.create_publisher(ArmControl, 'absolute_arm_move', 10)
         self.Masked_publisher = self.create_publisher(Image, 'masked_image_topic', 10)
 
         self.move_z = 0
         self.move_y = 0
 
-        self.position = Point()
-        self.position.x = 0.57
-        self.position.y = 0.0
-        self.position.z = 0.45
+        self.move_msg = ArmControl()
+        self.move_msg.position.x = 0.57
+        self.move_msg.position.y = 0.0
+        self.move_msg.position.z = 0.45
+        self.move_msg.gripper_state = 0
+        self.move_msg.wrist_angle = 0.0
+
+        
 
         self.count = 0
+        self.get_logger().info('Look Around Node Started')
 
     def image_callback(self, msg):
         if self.count > 20:
@@ -49,28 +55,27 @@ class LookAround(Node):
 
 
             if num_apples <= 0:
-                if self.position.y < 0.3:
-                    self.move_publisher.publish(self.position)
-                    self.get_logger().info('Published Arm Movement')
+                if self.move_msg.position.y < 0.2:
+                    self.move_publisher.publish(self.move_msg)
+                    self.get_logger().info('Published Search Arm Movement')
 
-                    self.position.y += 0.1
+                    self.move_msg.position.y += 0.1
                 
-                elif self.position.z < 0.7:
-                    self.move_publisher.publish(self.position)
-                    self.get_logger().info('Published Arm Movement')
+                elif self.move_msg.position.z < 0.7:
+                    self.move_publisher.publish(self.move_msg)
+                    self.get_logger().info('Published Search Arm Movement')
 
-                    self.position.z += 0.1
-                    self.position.y = 0.0
+                    self.move_msg.position.z += 0.1
+                    self.move_msg.position.y = 0.0
                     
 
                 else:
                     self.get_logger().info('No apples found')
-                    self.destroy_node()
+                    self.end_node = True
 
             else:
-                self.found_apple = True
+                self.end_node = True
                 self.get_logger().info('Apple found')
-                self.destroy_node()
 
         else:
             self.count += 1
@@ -80,7 +85,11 @@ class LookAround(Node):
 def main(args=None):
     rclpy.init(args=args)
     look_around = LookAround()
-    rclpy.spin(look_around)
+    while rclpy.ok():
+        rclpy.spin_once(look_around, timeout_sec=5)
+        if look_around.end_node:
+            look_around.get_logger().info('Destroying Node')
+            break
     look_around.destroy_node()
 
     rclpy.shutdown()

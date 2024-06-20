@@ -131,7 +131,7 @@ class PickAppleServer(Node):
             apple_coordinates[0].z = zChange
     
             # Publish Arm Movement
-            self.publish_arm_movement(apple_coordinates[0], 0)
+            self.publish_arm_movement(apple_coordinates[0], 0, 0)
             
             feedback_msg.feedback = f'moved to {apple_coordinates[0].y}, {apple_coordinates[0].z}'  
             goal_handle.publish_feedback(feedback_msg)
@@ -143,9 +143,10 @@ class PickAppleServer(Node):
 
             arm_msg = ArmControl()
             arm_msg.position.x = self.distance_msg.data
-            arm_msg.position.y = 99
-            arm_msg.position.z = 99
+            arm_msg.position.y = 99.0
+            arm_msg.position.z = 99.0
             arm_msg.gripper_state = 0
+            arm_msg.wrist_angle = 0.0
 
             self.absolute_move_publisher.publish(arm_msg)
         else:
@@ -156,9 +157,13 @@ class PickAppleServer(Node):
         # arm_msg.position.z = 0.7
         # arm_msg.gripper_state = 1
 
-        self.publish_arm_movement([0.0, 0.0, 0.05], 2)
-        self.publish_arm_movement([-0.2, 0.0, 0.0], 0)
-        self.publish_arm_movement([0.0, 0.0, 0.0], 1)
+        self.publish_arm_movement([0.0, 0.0, 0.05], 0.0, 2)
+        time.sleep(1)
+        self.publish_arm_movement([0.0, 0.0, 0.0], 180.0, 0)
+        time.sleep(15.0)
+        self.publish_arm_movement([-0.2, 0.0, 0.0], 0.0, 0)
+        time.sleep(5.0)
+        self.publish_arm_movement([0.0, 0.0, 0.0], 0.0, 1)
 
         
         # try:
@@ -198,7 +203,7 @@ class PickAppleServer(Node):
         return result
 
 
-    def publish_arm_movement(self, position: Union[Point, List[float]], gripper_state):
+    def publish_arm_movement(self, position: Union[Point, List[float]], wrist_angle: float, gripper_state):
         msg = ArmControl()
         if isinstance(position, Point):
             msg.position = position
@@ -209,6 +214,7 @@ class PickAppleServer(Node):
         else:
             self.get_logger().error('Invalid position type')
             return
+        msg.wrist_angle = float(wrist_angle)
         msg.gripper_state = gripper_state
         self.move_publisher.publish(msg)
         self.get_logger().info('Published Arm Movement')

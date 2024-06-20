@@ -12,8 +12,10 @@ from kortex_api.autogen.client_stubs.BaseCyclicClientRpc import BaseCyclicClient
 from kortex_api.autogen.messages import Base_pb2, BaseCyclic_pb2, Common_pb2
 
 from arm_control.mytry import example_move_to_home_position, example_trajectory
+from arm_control.pick_n_twist import set_angles, getAngles, populateAngularPose
 
 import time
+import sys
 
 
 class ArmMoveSubscriber(Node):
@@ -73,7 +75,7 @@ class ArmMoveSubscriber(Node):
             success = True   
 
             # Update the waypointsDefinition with the new coordinates
-            waypointsDefinition = (coordinates[0], coordinates[1], coordinates[2], 0.0, 90.0, 0.0, 90.0)
+            waypointsDefinition = (coordinates[0], coordinates[1], coordinates[2], 0.0, 90.0, msg.wrist_angle, 90.0)
 
             success &= example_trajectory(base, base_cyclic, waypointsDefinition)
             
@@ -112,7 +114,7 @@ class ArmMoveSubscriber(Node):
             success = True   
 
             # Update the waypointsDefinition with the new coordinates
-            waypointsDefinition = (coordinates[0], coordinates[1], coordinates[2], 0.0, 90.0, 0.0, 90.0)
+            waypointsDefinition = (coordinates[0], coordinates[1], coordinates[2], 0.0, 90.0, msg.wrist_angle, 90.0)
 
             try:
                 success &= example_trajectory(base, base_cyclic, waypointsDefinition)
@@ -120,6 +122,7 @@ class ArmMoveSubscriber(Node):
                 self.get_logger().info('Error in trajectory')
 
             self.get_logger().info('Moved to position: %f, %f, %f' % (feedback.base.tool_pose_x, feedback.base.tool_pose_y, feedback.base.tool_pose_z))
+
 
             self.gripper_control(base, msg.gripper_state)
 
@@ -188,10 +191,14 @@ class ArmMoveSubscriber(Node):
 
 
 def main(args=None):
+    print(f"Starting node with arguments: {sys.argv}")
+    
     rclpy.init(args=args)
-
     arm_move_subscriber = ArmMoveSubscriber()
-    rclpy.spin(arm_move_subscriber)
+    while rclpy.ok():
+        rclpy.spin_once(arm_move_subscriber)
+        print('Spinning')
+
     arm_move_subscriber.destroy_node()
     rclpy.shutdown()
 

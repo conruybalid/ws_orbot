@@ -33,18 +33,18 @@ class VideoPublisher(Node):
         if frame is not None:
             self.image_msg = CvBridge().cv2_to_imgmsg(frame)
             self.rgbpublisher_.publish(self.image_msg)
-            self.get_logger().info('Image published')
+            #self.get_logger().info('Image published')
         else:
             self.get_logger().info('Failed to read frame from RTSP rgb stream')
 
         # Create an Image message and publish it
-        frame = self.depth_stream_handler.get_latest_frame()
-        if frame is not None:
-            self.depth_msg = CvBridge().cv2_to_imgmsg(frame)
-            self.depthpublisher_.publish(self.depth_msg)
-            self.get_logger().info('Depth published')
-        else:
-            self.get_logger().info('Failed to read frame from RTSP depth stream')
+        # frame = self.depth_stream_handler.get_latest_frame()
+        # if frame is not None:
+        #     self.depth_msg = CvBridge().cv2_to_imgmsg(frame)
+        #     self.depthpublisher_.publish(self.depth_msg)
+        #     self.get_logger().info('Depth published')
+        # else:
+        #     self.get_logger().info('Failed to read frame from RTSP depth stream')
         
 
 def main(args=None):
