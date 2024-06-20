@@ -26,27 +26,27 @@ class ZedPublisher(Node):
                                  coordinate_system=sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP)
 
         self.zed = sl.Camera()
-        status = zed.open(init)
+        status = self.zed.open(init)
         if status != sl.ERROR_CODE.SUCCESS:
             print(repr(status))
             
 
 
         # Create a ZED camera
-        zed = sl.Camera()
+        self.zed = sl.Camera()
         init_params = sl.InitParameters()
         init_params.sdk_verbose = 1 # Enable verbose logging
         init_params.depth_mode = sl.DEPTH_MODE.PERFORMANCE # Set the depth mode to performance (fastest)
         init_params.coordinate_units = sl.UNIT.MILLIMETER  # Use meter units
 
         # Open the camera
-        err = zed.open(init_params)
+        err = self.zed.open(init_params)
         if err != sl.ERROR_CODE.SUCCESS:
             print("Error {}, exit program".format(err)) # Display the error
             
 
             # Capture 50 images and depth, then stop
-        i = 0
+        
         self.image = sl.Mat()
         self.depth = sl.Mat()
         self.point_cloud = sl.Mat()
@@ -65,7 +65,7 @@ class ZedPublisher(Node):
             self.zed.retrieve_image(self.image, sl.VIEW.LEFT) # Get the left image
             self.zed.retrieve_measure(self.depth, sl.MEASURE.DEPTH) # Retrieve depth matrix. Depth is aligned on the left RGB image
             self.zed.retrieve_measure(self.point_cloud, sl.MEASURE.XYZRGBA) # Retrieve colored point cloud
-            i = i + 1
+            
 
                     # Get and print distance value in mm at the center of the image
             # We measure the distance camera - object using Euclidean distance
@@ -116,8 +116,9 @@ class ZedPublisher(Node):
                 print("Depth at center of red mask: {} m".format(depth_value))
                 # print("Distance from left of the image (x-axis): {} meters".format(x_distance))
                 # print("Distance from top of the image (y-axis): {} meters".format(y_distance))
-                
-                self.distancepublisher_.publish(Float32(depth_value))
+                depth_msg = Float32()
+                depth_msg.data = depth_value
+                self.distancepublisher_.publish(depth_msg)
 
             else:
                 print("No red mask found.")

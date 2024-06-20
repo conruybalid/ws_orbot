@@ -140,15 +140,17 @@ class PickAppleServer(Node):
         if self.distance_msg is not None:
 
             feedback_msg.feedback = f'found apple at absolute distance {self.distance_msg.data}'
+            goal_handle.publish_feedback(feedback_msg)
 
             arm_msg = ArmControl()
             arm_msg.position.x = self.distance_msg.data
             arm_msg.position.y = 99.0
             arm_msg.position.z = 99.0
-            arm_msg.gripper_state = 0
+            arm_msg.gripper_state = 1
             arm_msg.wrist_angle = 0.0
 
             self.absolute_move_publisher.publish(arm_msg)
+            time.sleep(2.0)
         else:
             self.get_logger().info('No depth found')
 
@@ -156,7 +158,7 @@ class PickAppleServer(Node):
         # arm_msg.position.y = 0.0
         # arm_msg.position.z = 0.7
         # arm_msg.gripper_state = 1
-
+        time.sleep(5)
         self.publish_arm_movement([0.0, 0.0, 0.05], 0.0, 2)
         time.sleep(1)
         self.publish_arm_movement([0.0, 0.0, 0.0], 180.0, 0)
