@@ -69,6 +69,62 @@ class MasterNode(Node):
         self.move_publisher.publish(msg)
         self.get_logger().info('Published Arm Movement')
 
+    #--------------------Send Goal--------------------#
+
+    def format_move_goal(self, position, wrist_angle, gripper_state):
+        goal_msg = MoveArm.Goal()
+        goal_msg.goal.position.x = position[0]
+        goal_msg.goal.position.y = position[1]
+        goal_msg.goal.position.z = position[2]
+        goal_msg.goal.wrist_angle = float(wrist_angle)
+        goal_msg.goal.gripper_state = gripper_state
+
+        return goal_msg
+    
+    def send_move_goal(self, goal_msg):
+        self.action_client.wait_for_server()
+        future = self.action_client.send_goal_async(goal_msg)
+        #future.add_done_callback(self.goal_response_callback)
+        rclpy.spin_until_future_complete(self, future)
+
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            self.get_logger().info('Goal rejected :(')
+            return
+
+        self.get_logger().info('Goal accepted :)')
+
+        result_future = goal_handle.get_result_async()
+        #result_future.add_done_callback(self.get_result_callback)
+        rclpy.spin_until_future_complete(self, result_future)
+        result = result_future.result().result
+        self.get_logger().info(f'Move Result: {result.result}')
+
+        
+        return
+
+    def send_absolute_move_goal(self, goal_msg):
+        self.absolute_action_client.wait_for_server()
+        future = self.absolute_action_client.send_goal_async(goal_msg)
+        #future.add_done_callback(self.goal_response_callback)
+        rclpy.spin_until_future_complete(self, future)
+
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            self.get_logger().info('Goal rejected :(')
+            return
+
+        self.get_logger().info('Goal accepted :)')
+
+        result_future = goal_handle.get_result_async()
+        #result_future.add_done_callback(self.get_result_callback)
+        rclpy.spin_until_future_complete(self, result_future)
+        result = result_future.result().result
+        self.get_logger().info(f'Move Result: {result.result}')
+
+        
+        return
+
     
 
     #---------------Search--------------#
@@ -217,8 +273,6 @@ class MasterNode(Node):
         if not self.center_apple():
             return
         
-        time.sleep(5)
-
         # Do it again for better accuracy
         self.get_logger().info('Centering Apple twice')
         if not self.center_apple():
@@ -229,7 +283,8 @@ class MasterNode(Node):
             self.reach_apple()
 
         else:
-            self.publish_arm_movement([0.2, 0.0, 0.0], 1, 0)
+            self.get_logger().info('No depth found \nPerfroming placeholder "reach for apple"')
+            self.send_move_goal(self.format_move_goal([0.2, 0.0, 0.0], 1, 0))
         
         # Grab the Apple
         self.grab_apple()
@@ -237,64 +292,6 @@ class MasterNode(Node):
         return
     
 
-    #--------------------Send Goal--------------------#
-
-    def format_move_goal(self, position, wrist_angle, gripper_state):
-        goal_msg = MoveArm.Goal()
-        goal_msg.goal.position.x = position[0]
-        goal_msg.goal.position.y = position[1]
-        goal_msg.goal.position.z = position[2]
-        goal_msg.goal.wrist_angle = float(wrist_angle)
-        goal_msg.goal.gripper_state = gripper_state
-
-        return goal_msg
-    
-    def send_move_goal(self, goal_msg):
-        self.action_client.wait_for_server()
-        future = self.action_client.send_goal_async(goal_msg)
-        #future.add_done_callback(self.goal_response_callback)
-        rclpy.spin_until_future_complete(self, future)
-
-        goal_handle = future.result()
-        if not goal_handle.accepted:
-            self.get_logger().info('Goal rejected :(')
-            return
-
-        self.get_logger().info('Goal accepted :)')
-
-        result_future = goal_handle.get_result_async()
-        #result_future.add_done_callback(self.get_result_callback)
-        rclpy.spin_until_future_complete(self, result_future)
-        result = result_future.result().result
-        self.get_logger().info(f'Move Result: {result.result}')
-
-        
-        return
-
-    def send_absolute_move_goal(self, goal_msg):
-        self.absolute_action_client.wait_for_server()
-        future = self.absolute_action_client.send_goal_async(goal_msg)
-        #future.add_done_callback(self.goal_response_callback)
-        rclpy.spin_until_future_complete(self, future)
-
-        goal_handle = future.result()
-        if not goal_handle.accepted:
-            self.get_logger().info('Goal rejected :(')
-            return
-
-        self.get_logger().info('Goal accepted :)')
-
-        result_future = goal_handle.get_result_async()
-        #result_future.add_done_callback(self.get_result_callback)
-        rclpy.spin_until_future_complete(self, result_future)
-        result = result_future.result().result
-        self.get_logger().info(f'Move Result: {result.result}')
-
-        
-        return
-
-
-    #--------------------Test--------------------#
     
     def test(self):
         self.get_logger().info('Testing')
