@@ -279,7 +279,7 @@ class MasterNode(Node):
             return
         
         # Reach for the Apple
-        if self.depth_msg is not None:
+        if self.distance_msg is not None:
             self.reach_apple()
 
         else:
