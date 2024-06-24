@@ -110,7 +110,7 @@ def example_trajectory(base, base_cyclic, waypointsDefinition):
     index = index + 1 
 
     # Verify validity of waypoints
-    result = base.ValidateWaypointList(waypoints);
+    result = base.ValidateWaypointList(waypoints)
     if(len(result.trajectory_error_report.trajectory_error_elements) == 0):
         e = threading.Event()
         notification_handle = base.OnNotificationActionTopic(   check_for_end_or_abort(e),
@@ -196,7 +196,7 @@ def main():
 
 
             # Update the waypointsDefinition with the new coordinates
-            waypointsDefinition = (coordinates[0] + tool_x, coordinates[1] + tool_y, coordinates[2] + tool_z, 0.0, 90.0, 0.0, 90.0)
+            waypointsDefinition = (coordinates[0] + tool_x, coordinates[1] + tool_y, coordinates[2] + tool_z, 0.0, 90.0, 180.0, 90.0)
 
             success &= example_trajectory(base, base_cyclic, waypointsDefinition)
        

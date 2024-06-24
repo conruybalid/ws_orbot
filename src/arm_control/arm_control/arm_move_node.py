@@ -77,7 +77,10 @@ class ArmMoveSubscriber(Node):
             # Update the waypointsDefinition with the new coordinates
             waypointsDefinition = (coordinates[0], coordinates[1], coordinates[2], 0.0, 90.0, msg.wrist_angle, 90.0)
 
-            success &= example_trajectory(base, base_cyclic, waypointsDefinition)
+            try:
+                success &= example_trajectory(base, base_cyclic, waypointsDefinition)
+            except:
+                self.get_logger().info(f'Error in trajectory: {coordinates[0]}, {coordinates[1]}, {coordinates[2]}')
             
             self.get_logger().info('Moved to position: %f, %f, %f' % (feedback.base.tool_pose_x, feedback.base.tool_pose_y, feedback.base.tool_pose_z))
 
