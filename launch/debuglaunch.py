@@ -16,15 +16,15 @@ def generate_launch_description():
             executable='masked_image_subscriber',
         ),
 
-        Node(
-            package='pick_apple',
-            executable='search_apple',
-        ),
+        # Node(
+        #     package='pick_apple',
+        #     executable='search_apple',
+        # ),
 
-        Node(
-            package='pick_apple',
-            executable='pick_apple_action_server',
-        ),
+        # Node(
+        #     package='pick_apple',
+        #     executable='pick_apple_action_server',
+        # ),
 
 
         # Node(
