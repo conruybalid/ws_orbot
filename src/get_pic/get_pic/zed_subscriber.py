@@ -13,7 +13,7 @@ import numpy as np
 
 class VideoSubscriber(Node):
     def __init__(self):
-        super().__init__('video_subscriber')
+        super().__init__('zed_subscriber')
         self.subscription = self.create_subscription(
             Image,
             'zed_image_topic',

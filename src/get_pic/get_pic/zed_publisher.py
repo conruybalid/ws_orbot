@@ -12,7 +12,7 @@ import pyzed.sl as sl
 
 class ZedPublisher(Node):
     def __init__(self):
-        super().__init__('video_publisher')
+        super().__init__('zed_publisher')
         self.rgbpublisher_ = self.create_publisher(Image, 'zed_rgb_topic', 10)
         self.depthpublisher_ = self.create_publisher(Image, 'zed_depth_topic', 10)
         self.pointcloutpublisher_ = self.create_publisher(PointCloud2, 'zed_pointcloud_topic', 10)

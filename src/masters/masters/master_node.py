@@ -18,7 +18,7 @@ import time
 
 class MasterNode(Node):
     def __init__(self):
-        super().__init__('pick_apple_action_server')
+        super().__init__('Master_Node')
         self.image_sub = self.create_subscription(Image, 'image_topic', self.image_callback, 10)
         self.depth_sub = self.create_subscription(Image, 'depth_topic', self.depth_callback, 10)
         self.distance_sub = self.create_subscription(Float32, 'zed_distance_topic', self.distance_callback, 10)

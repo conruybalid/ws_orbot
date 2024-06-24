@@ -15,7 +15,7 @@ import numpy as np
 
 class ZedPublisher(Node):
     def __init__(self):
-        super().__init__('video_publisher')
+        super().__init__('zed_distance_publisher')
         self.distancepublisher_ = self.create_publisher(Float32, 'zed_distance_topic', 10)
         self.timer_ = self.create_timer(1.0, self.publish_distance)
         self.get_logger().info('Distance publisher node has been initialized')
