@@ -1,10 +1,12 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.action import ActionClient
 
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float32
 
 from custom_interfaces.msg import ArmControl
+from custom_interfaces.action import MoveArm
 
 from masters.ImageProcess import processImage
 
@@ -26,6 +28,11 @@ class MasterNode(Node):
 
         self.move_publisher = self.create_publisher(ArmControl, 'arm_move', 10)
         self.absolute_move_publisher = self.create_publisher(ArmControl, 'absolute_arm_move', 10)
+
+        self.action_client = ActionClient(self, MoveArm, 'move_arm_action')
+        self.absolute_action_client = ActionClient(self, MoveArm, 'absolute_move_arm_action')
+        
+
         self.Masked_publisher = self.create_publisher(Image, 'masked_image_topic', 10)
 
 
@@ -37,6 +44,16 @@ class MasterNode(Node):
 
     def distance_callback(self, msg):
         self.distance_msg = msg
+
+    def request_process_image(self, image_msg):
+        self.process_request.image = image_msg
+        
+        self.future = self.process_client.call_async(self.process_request)
+        rclpy.spin_until_future_complete(self, self.future)
+        response = self.future.result()
+        self.future = None
+        return response
+    
 
     def publish_arm_movement(self, position, wrist_angle, gripper_state):
         msg = ArmControl()
@@ -52,6 +69,10 @@ class MasterNode(Node):
         self.move_publisher.publish(msg)
         self.get_logger().info('Published Arm Movement')
 
+    
+
+    #---------------Search--------------#
+
 
     def Search(self):
         end_search = False
@@ -62,6 +83,9 @@ class MasterNode(Node):
         move_msg.position.z = 0.45
         move_msg.gripper_state = 0
         move_msg.wrist_angle = 0.0
+
+        move_goal = MoveArm.Goal()
+        move_goal.goal = move_msg
 
 
         while not end_search:
@@ -74,18 +98,18 @@ class MasterNode(Node):
             self.Masked_publisher.publish(mask_msg)
 
             if num_apples <= 0:
-                if move_msg.position.y < 0.2:
+                if move_goal.goal.position.y < 0.2:
                     self.absolute_move_publisher.publish(move_msg)
-                    self.get_logger().info(f'Published Search Arm Movement: {move_msg.position.y}, {move_msg.position.z}')
+                    self.get_logger().info(f'Published Search Arm Movement: {move_goal.goal.position.y}, {move_goal.goal.position.z}')
 
-                    move_msg.position.y += 0.1
+                    move_goal.goal.position.y += 0.1
                 
-                elif move_msg.position.z < 0.7:
+                elif move_goal.goal.position.z < 0.7:
                     self.absolute_move_publisher.publish(move_msg)
-                    self.get_logger().info(f'Published Search Arm Movement: {move_msg.position.y}, {move_msg.position.z}')
+                    self.get_logger().info(f'Published Search Arm Movement: {move_goal.goal.position.y}, {move_goal.goal.position.z}')
 
-                    move_msg.position.z += 0.1
-                    move_msg.position.y = 0.0
+                    move_goal.goal.position.z += 0.1
+                    move_goal.goal.position.y = 0.0
                     
 
                 else:
@@ -140,8 +164,11 @@ class MasterNode(Node):
         move_msg.gripper_state = 0
         move_msg.wrist_angle = 0.0
 
+        move_goal = MoveArm.Goal()
+        move_goal.goal = move_msg
+
         # Publish Arm Movement
-        self.move_publisher.publish(move_msg)
+        self.send_move_goal(move_goal)
         self.get_logger().info(f'moved {move_msg.position.y} in y, {move_msg.position.z} in z')
         
         return True
@@ -156,20 +183,21 @@ class MasterNode(Node):
         arm_msg.gripper_state = 1
         arm_msg.wrist_angle = 0.0
 
-        self.absolute_move_publisher.publish(arm_msg)
-        time.sleep(2.0)
+        move_goal = MoveArm.Goal()
+        move_goal.goal = arm_msg
+
+        self.send_absolute_move_goal(move_goal)
+    
         return
         
 
     def grab_apple(self):
-        time.sleep(5)
-        self.publish_arm_movement([0.0, 0.0, 0.05], 0.0, 2)
-        time.sleep(1)
-        self.publish_arm_movement([0.0, 0.0, 0.0], 180.0, 0)
-        time.sleep(15.0)
-        self.publish_arm_movement([-0.2, 0.0, 0.0], 0.0, 0)
-        time.sleep(15.0)
-        self.publish_arm_movement([0.0, 0.0, 0.0], 0.0, 1)
+
+        self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.05], 0.0, 2))
+        self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.0], 180.0, 0))
+        self.send_move_goal(self.format_move_goal([-0.2, 0.0, 0.0], 0.0, 0))
+        self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.0], 0.0, 1))
+
 
         return
 
@@ -178,7 +206,7 @@ class MasterNode(Node):
     def run(self):
         self.get_logger().info('Master Node Routine Started')
         
-        while not (self.image_msg is None):
+        while (self.image_msg is None):
             self.get_logger().info('Waiting for images')
             rclpy.spin_once(self)
 
@@ -207,7 +235,77 @@ class MasterNode(Node):
         self.grab_apple()
 
         return
+    
+
+    #--------------------Send Goal--------------------#
+
+    def format_move_goal(self, position, wrist_angle, gripper_state):
+        goal_msg = MoveArm.Goal()
+        goal_msg.goal.position.x = position[0]
+        goal_msg.goal.position.y = position[1]
+        goal_msg.goal.position.z = position[2]
+        goal_msg.goal.wrist_angle = float(wrist_angle)
+        goal_msg.goal.gripper_state = gripper_state
+
+        return goal_msg
+    
+    def send_move_goal(self, goal_msg):
+        self.action_client.wait_for_server()
+        future = self.action_client.send_goal_async(goal_msg)
+        #future.add_done_callback(self.goal_response_callback)
+        rclpy.spin_until_future_complete(self, future)
+
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            self.get_logger().info('Goal rejected :(')
+            return
+
+        self.get_logger().info('Goal accepted :)')
+
+        result_future = goal_handle.get_result_async()
+        #result_future.add_done_callback(self.get_result_callback)
+        rclpy.spin_until_future_complete(self, result_future)
+        result = result_future.result().result
+        self.get_logger().info(f'Move Result: {result.result}')
+
         
+        return
+
+    def send_absolute_move_goal(self, goal_msg):
+        self.absolute_action_client.wait_for_server()
+        future = self.absolute_action_client.send_goal_async(goal_msg)
+        #future.add_done_callback(self.goal_response_callback)
+        rclpy.spin_until_future_complete(self, future)
+
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            self.get_logger().info('Goal rejected :(')
+            return
+
+        self.get_logger().info('Goal accepted :)')
+
+        result_future = goal_handle.get_result_async()
+        #result_future.add_done_callback(self.get_result_callback)
+        rclpy.spin_until_future_complete(self, result_future)
+        result = result_future.result().result
+        self.get_logger().info(f'Move Result: {result.result}')
+
+        
+        return
+
+
+    #--------------------Test--------------------#
+    
+    def test(self):
+        self.get_logger().info('Testing')
+        
+        self.send_move_goal(self.format_move_goal([0.2, 0.0, 0.0], 0, 0))
+        self.get_logger().info('Forward Goal Sent')
+        self.send_move_goal(self.format_move_goal([-0.2, 0.0, 0.0], 0, 0))
+        self.get_logger().info('Backward Goal Sent')
+
+        self.get_logger().info('Test Complete')
+        return
 
 
 
@@ -216,6 +314,8 @@ def main(args=None):
     node = MasterNode()
     node.run()
     node.get_logger().info('Destroying Master Node')
+    node.action_client.destroy()
+    node.absolute_action_client.destroy()
     node.destroy_node()
     rclpy.shutdown()
 

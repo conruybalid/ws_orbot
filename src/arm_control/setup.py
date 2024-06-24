@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'arm_control = arm_control.arm_move_node:main',
+            'arm_move_action = arm_control.arm_move_action:main',
         ],
     },
 )

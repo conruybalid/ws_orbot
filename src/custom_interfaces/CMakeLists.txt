@@ -20,6 +20,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/ImageRequest.srv"
   "action/PickApple.action"
   "msg/ArmControl.msg"
+  "action/MoveArm.action"
   DEPENDENCIES sensor_msgs # Add packages that above messages depend on, in this case geometry_msgs for Sphere.msg
 )
 
