@@ -17,7 +17,37 @@ import time
 
 
 class MasterNode(Node):
+    """
+    This class represents the master node of the system.
+    This node is the main node that ties the other nodes together and performs the main logic of the system.
+    Currently, it completes its task and then destroys itself.
+
+    Attributes:
+        Subscriptions:
+            image_sub (Subscription): A subscription to the color image topic. (arm camera)
+            depth_sub (Subscription): A subscription to the depth image topic. (arm camera)
+            distance_sub (Subscription): A subscription to the zed distance topic. (zed camera)
+
+        Publishers:
+            move_publisher (Publisher): A publisher for arm movement commands. (LEGACY: used arm_action_client instead)
+            absolute_move_publisher (Publisher): A publisher for absolute arm movement commands. (LEGACY: use arm_absolute_action_client instead)
+            Masked_publisher (Publisher): A publisher for the masked image topic.
+
+        Action Clients:
+            arm_action_client (ActionClient): An action client for the move arm action. (Relative movement)
+            arm_absolute_action_client (ActionClient): An action client for the absolute move arm action.  (absolute position)
+
+        Other Attributes:
+            image_msg (Image): The latest image message received.
+            depth_msg (Image): The latest depth message received.
+            distance_msg (Float32): The latest distance message received.
+    """
     def __init__(self):
+        """
+        Init fuction for the MasterNode class.
+        calls the init function of the parent class (Node) and initializes the subscriptions, publishers and action clients.
+        """
+
         super().__init__('Master_Node')
         self.image_sub = self.create_subscription(Image, 'image_topic', self.image_callback, 10)
         self.depth_sub = self.create_subscription(Image, 'depth_topic', self.depth_callback, 10)
@@ -29,12 +59,17 @@ class MasterNode(Node):
         self.move_publisher = self.create_publisher(ArmControl, 'arm_move', 10)
         self.absolute_move_publisher = self.create_publisher(ArmControl, 'absolute_arm_move', 10)
 
-        self.action_client = ActionClient(self, MoveArm, 'move_arm_action')
-        self.absolute_action_client = ActionClient(self, MoveArm, 'absolute_move_arm_action')
+        self.arm_action_client = ActionClient(self, MoveArm, 'move_arm_action')
+        self.arm_absolute_action_client = ActionClient(self, MoveArm, 'absolute_move_arm_action')
         
 
         self.Masked_publisher = self.create_publisher(Image, 'masked_image_topic', 10)
 
+    """
+    Callback functions for the subscriptions.
+    Called whenever a message is received from the respective topic.
+    Assigns the received message to the respective attribute (image_msg, depth_msg, distance_msg)
+    """
 
     def image_callback(self, msg):
         self.image_msg = msg
@@ -45,7 +80,13 @@ class MasterNode(Node):
     def distance_callback(self, msg):
         self.distance_msg = msg
 
+
     def request_process_image(self, image_msg):
+        """
+        Process Image Service Client
+        Not used in the current implementation
+        Calls a service to create red mask and identify apples in the image.
+        """
         self.process_request.image = image_msg
         
         self.future = self.process_client.call_async(self.process_request)
@@ -56,6 +97,10 @@ class MasterNode(Node):
     
 
     def publish_arm_movement(self, position, wrist_angle, gripper_state):
+        """
+        LEGACY
+        Used to publish arm movement commands to the arm_move topic.
+        """
         msg = ArmControl()
         if isinstance(position, list):
             msg.position.x = position[0]
@@ -69,9 +114,17 @@ class MasterNode(Node):
         self.move_publisher.publish(msg)
         self.get_logger().info('Published Arm Movement')
 
-    #--------------------Send Goal--------------------#
+
+
+    """
+    ARM MOVEMENT FUNCTIONS
+    These Functions are used to send arm movement goals to the arm action server.
+    """
 
     def format_move_goal(self, position, wrist_angle, gripper_state):
+        """
+        Quickly formates a goal that can be sent to the arm action server.
+        """
         goal_msg = MoveArm.Goal()
         goal_msg.goal.position.x = position[0]
         goal_msg.goal.position.y = position[1]
@@ -82,8 +135,13 @@ class MasterNode(Node):
         return goal_msg
     
     def send_move_goal(self, goal_msg):
-        self.action_client.wait_for_server()
-        future = self.action_client.send_goal_async(goal_msg)
+        """
+        Sends a relative arm movement goal to the arm action server.
+        Waits for the server to respond and returns the result.
+        """
+
+        self.arm_action_client.wait_for_server()
+        future = self.arm_action_client.send_goal_async(goal_msg)
         #future.add_done_callback(self.goal_response_callback)
         rclpy.spin_until_future_complete(self, future)
 
@@ -104,8 +162,13 @@ class MasterNode(Node):
         return result.result
 
     def send_absolute_move_goal(self, goal_msg):
-        self.absolute_action_client.wait_for_server()
-        future = self.absolute_action_client.send_goal_async(goal_msg)
+        """
+        Sends an absolute arm movement goal to the arm action server.
+        Waits for the server to respond and returns the result.
+        """
+
+        self.arm_absolute_action_client.wait_for_server()
+        future = self.arm_absolute_action_client.send_goal_async(goal_msg)
         #future.add_done_callback(self.goal_response_callback)
         rclpy.spin_until_future_complete(self, future)
 
@@ -127,8 +190,11 @@ class MasterNode(Node):
 
     
 
-    #---------------Search--------------#
-
+    """
+    SEARCH FUNCTION
+    This function is used to search for apples that may be out of frame
+    Hopefully this will be unnecessary in the future
+    """
 
     def Search(self):
         end_search = False
@@ -177,21 +243,21 @@ class MasterNode(Node):
                 end_search = True
                 self.get_logger().info('Apple found')
 
+        return
 
-    def pixel_scale(self, x, y):
-        xDesire = 640; 
-        xDist = xDesire - x
-        xChange = 0.00025*xDist
 
-        yDesire = 420; #was 420
-        yDist = yDesire - y
-        yChange = 0.00025*yDist
-
-        return xChange, yChange
-       
-
+    """
+    CENTER APPLE FUNCTIONS
+    These functions are used to center the apple in the frame.
+    """
 
     def center_apple(self):
+        """
+        Will apply a mask to the image and find the apple location.
+        Then it will move the arm to attempt to center the apple in the frame.
+        It will continue until the apple is within a certain range of the center of the frame and return True.
+        If sight of the apple is lost, the function will return False.
+        """
         apple_coordinates = None
         while (apple_coordinates == None or not ((apple_coordinates[0].x <= 650 and apple_coordinates[0].x >= 630) and (apple_coordinates[0].y <= 430 and apple_coordinates[0].y >= 410))):
             rclpy.spin_once(self)
@@ -229,9 +295,35 @@ class MasterNode(Node):
             self.get_logger().info(f'moved {move_msg.position.y} in y, {move_msg.position.z} in z')
         
         return True
+    
+    
+    def pixel_scale(self, x, y):
+        """
+        Transforms pixel coordinates to relative arm movement coordinates.
+        """
+        xDesire = 640; 
+        xDist = xDesire - x
+        xChange = 0.00025*xDist
 
+        yDesire = 420; #was 420
+        yDist = yDesire - y
+        yChange = 0.00025*yDist
+
+        return xChange, yChange
+    
+
+    
+    """
+    RETRIEVE APPLE FUNCTIONS
+    These functions are used to reach out, grab the apple and drop it in a basket.
+    """
 
     def reach_apple(self):
+        """
+        If a distance has been received from the zed camera,
+        this function can be used to reach out to the apple.
+        """
+
         self.get_logger().info('found apple at absolute distance %f' % self.distance_msg.data)
         arm_msg = ArmControl()
         arm_msg.position.x = self.distance_msg.data
@@ -251,6 +343,10 @@ class MasterNode(Node):
         
 
     def grab_apple(self):
+        """
+        Once the apple is within the gripper's reach, 
+        this function can be used to grab the apple and deposit it in the basket.
+        """
 
         try:
             # Pick Apple
@@ -292,6 +388,10 @@ class MasterNode(Node):
         return
 
 
+    """
+    MAIN ROUTINE
+    This is the main routine of the master node.
+    """
 
     def run(self):
         self.get_logger().info('Master Node Routine Started')
@@ -303,14 +403,9 @@ class MasterNode(Node):
         self.Search()
 
         # Center the apple
-        self.get_logger().info('Centering Apple once')
+        self.get_logger().info('Centering Apple')
         if not self.center_apple():
             return
-        
-        # # Do it again for better accuracy
-        # self.get_logger().info('Centering Apple twice')
-        # if not self.center_apple():
-        #     return
         
         # Reach for the Apple
         if self.distance_msg is not None:
@@ -330,6 +425,10 @@ class MasterNode(Node):
         return
     
 
+    """
+    TESTING ROUTINE
+    This function can be used to test the functionality of the master node.
+    """
     
     def test(self):
         self.get_logger().info('Testing')
@@ -344,10 +443,18 @@ class MasterNode(Node):
 
 
 
+"""
+Main Function
+"""
+
 def main(args=None):
+    """
+    This function initializes the master node and runs the main routine.
+    Once it is complete, it cleans up by destroying the node and shutting down the rclpy system.
+    """
     rclpy.init(args=args)
     node = MasterNode()
-    node.run()
+    node.run() # Run the main routine
     node.get_logger().info('Destroying Master Node')
     node.action_client.destroy()
     node.absolute_action_client.destroy()
