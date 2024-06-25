@@ -14,7 +14,7 @@ import pyzed.sl as sl
 class ZedPublisher(Node):
     def __init__(self):
         super().__init__('zed_publisher')
-        self.rgbpublisher_ = self.create_publisher(Image, 'zed_rgb_topic', 10)
+        self.rgbpublisher_ = self.create_publisher(Image, 'zed_image_topic', 10)
         self.depthpublisher_ = self.create_publisher(Image, 'zed_depth_topic', 10)
         self.pointcloutpublisher_ = self.create_publisher(PointCloud2, 'zed_pointcloud_topic', 10)
         self.timer_ = self.create_timer(0.1, self.publish_images)
@@ -82,8 +82,8 @@ class ZedPublisher(Node):
 
         # point cloud    
         if self.point_cloud is not None:
-            depth_msg = self.zed_point_cloud_to_ros_point_cloud2(self.point_cloud)
-            self.depthpublisher_.publish(depth_msg)
+            point_cloud_msg = self.zed_point_cloud_to_ros_point_cloud2(self.point_cloud)
+            self.pointcloutpublisher_.publish(point_cloud_msg)
             self.get_logger().info('point cloud published')
         else:
             self.get_logger().info('self.point_cloud is None')
