@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import Float32
+from sensor_msgs.msg import Image
 
 import cv2
 from cv_bridge import CvBridge
@@ -17,6 +18,7 @@ class ZedPublisher(Node):
     def __init__(self):
         super().__init__('zed_distance_publisher')
         self.distancepublisher_ = self.create_publisher(Float32, 'zed_distance_topic', 10)
+        self.maskpublisher = self.create_publisher(Image, 'zed_mask_topic', 10)
         self.timer_ = self.create_timer(1.0, self.publish_distance)
         self.get_logger().info('Distance publisher node has been initialized')
 
@@ -119,6 +121,8 @@ class ZedPublisher(Node):
                 depth_msg = Float32()
                 depth_msg.data = depth_value
                 self.distancepublisher_.publish(depth_msg)
+                mask_msg = CvBridge().cv2_to_imgmsg(mask)
+                self.maskpublisher.publish(mask_msg)
 
             else:
                 print("No red mask found.")

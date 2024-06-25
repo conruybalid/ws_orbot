@@ -20,19 +20,23 @@ class ZedPublisher(Node):
         self.get_logger().info('Video publisher node has been initialized')
 
         
+        
+
         init = sl.InitParameters(depth_mode=sl.DEPTH_MODE.ULTRA,
-                                    coordinate_units=sl.UNIT.MILLIMETER,
-                                    coordinate_system=sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP)
+                                 coordinate_units=sl.UNIT.MILLIMETER,
+                                 coordinate_system=sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP)
 
         self.zed = sl.Camera()
         status = self.zed.open(init)
         if status != sl.ERROR_CODE.SUCCESS:
             print(repr(status))
-            self.get_logger().info("Failed to open ZED camera, destroying node...")
-            self.destroy_node()
+            
 
+
+        # Create a ZED camera
+        self.zed = sl.Camera()
         init_params = sl.InitParameters()
-        init_params.sdk_verbose = True # Enable verbose logging
+        init_params.sdk_verbose = 1 # Enable verbose logging
         init_params.depth_mode = sl.DEPTH_MODE.PERFORMANCE # Set the depth mode to performance (fastest)
         init_params.coordinate_units = sl.UNIT.MILLIMETER  # Use meter units
 
@@ -40,9 +44,7 @@ class ZedPublisher(Node):
         err = self.zed.open(init_params)
         if err != sl.ERROR_CODE.SUCCESS:
             print("Error {}, exit program".format(err)) # Display the error
-            self.get_logger().info("Failed to open ZED camera, destroying node...")
-            self.destroy_node()
-
+            
 
         self.get_logger().info('ZED camera has been initialized')
 
@@ -63,7 +65,7 @@ class ZedPublisher(Node):
 
 
         if self.image is not None:
-            image_msg = self.s1_mat_to_ros_image(self.image)
+            image_msg = self.sl_mat_to_ros_image(self.image)
             self.rgbpublisher_.publish(image_msg)
             self.get_logger().info('Image published')
         else:
@@ -71,7 +73,7 @@ class ZedPublisher(Node):
 
         # depth
         if self.depth is not None:
-            depth_msg = self.s1_mat_to_ros_image(self.depth)
+            depth_msg = self.sl_mat_to_ros_image(self.depth)
             self.depthpublisher_.publish(depth_msg)
             self.get_logger().info('Depth published')
         else:
@@ -86,7 +88,7 @@ class ZedPublisher(Node):
             self.get_logger().info('self.point_cloud is None')
     
     
-    def sl_mat_to_ros_image(zed_image):
+    def sl_mat_to_ros_image(self, zed_image):
         # Convert sl.Mat to numpy array
         image_np = zed_image.get_data()
 
@@ -96,11 +98,12 @@ class ZedPublisher(Node):
 
         # Use cv_bridge to convert the OpenCV image to a ROS 2 image message
         bridge = CvBridge()
-        ros_image_msg = bridge.cv2_to_imgmsg(image_np, "bgr8")  # Use "rgb8" if you converted the color space
+         
+        ros_image_msg = bridge.cv2_to_imgmsg(image_np, "8UC4")  
 
         return ros_image_msg
     
-    def zed_point_cloud_to_ros_point_cloud2(zed_point_cloud):
+    def zed_point_cloud_to_ros_point_cloud2(self, zed_point_cloud):
         # Initialize the PointCloud2 message
         ros_point_cloud = PointCloud2()
       #  ros_point_cloud.header.stamp = self.get_clock().now().to_msg()
