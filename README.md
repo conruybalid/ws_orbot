@@ -183,3 +183,10 @@ if __name__ == '__main__':
 
 ```
 
+# Dependencies
+
+This system was designed on Ubuntu 20.04 using the ROS2 Foxy Distribution
+
+The Kinova Robotic Arm uses the Kortex Python API, which can be downloaded from https://github.com/Kinovarobotics/kortex/blob/master/api_python/examples/readme.md
+
+The Zed Camera requires the ZED SDK Library, which can be downloaded from https://www.stereolabs.com/developers/release 
