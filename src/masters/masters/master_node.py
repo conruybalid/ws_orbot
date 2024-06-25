@@ -90,7 +90,7 @@ class MasterNode(Node):
         goal_handle = future.result()
         if not goal_handle.accepted:
             self.get_logger().info('Goal rejected :(')
-            return
+            return False
 
         self.get_logger().info('Goal accepted :)')
 
@@ -101,7 +101,7 @@ class MasterNode(Node):
         self.get_logger().info(f'Move Result: {result.result}')
 
         
-        return
+        return result.result
 
     def send_absolute_move_goal(self, goal_msg):
         self.absolute_action_client.wait_for_server()
@@ -112,7 +112,7 @@ class MasterNode(Node):
         goal_handle = future.result()
         if not goal_handle.accepted:
             self.get_logger().info('Goal rejected :(')
-            return
+            return False
 
         self.get_logger().info('Goal accepted :)')
 
@@ -123,7 +123,7 @@ class MasterNode(Node):
         self.get_logger().info(f'Move Result: {result.result}')
 
         
-        return
+        return result.result
 
     
 
@@ -155,13 +155,13 @@ class MasterNode(Node):
 
             if num_apples <= 0:
                 if move_goal.goal.position.y < 0.2:
-                    self.absolute_move_publisher.publish(move_msg)
+                    self.send_absolute_move_goal(move_goal)
                     self.get_logger().info(f'Published Search Arm Movement: {move_goal.goal.position.y}, {move_goal.goal.position.z}')
 
                     move_goal.goal.position.y += 0.1
                 
                 elif move_goal.goal.position.z < 0.7:
-                    self.absolute_move_publisher.publish(move_msg)
+                    self.send_absolute_move_goal(move_goal)
                     self.get_logger().info(f'Published Search Arm Movement: {move_goal.goal.position.y}, {move_goal.goal.position.z}')
 
                     move_goal.goal.position.z += 0.1
@@ -175,8 +175,6 @@ class MasterNode(Node):
             else:
                 end_search = True
                 self.get_logger().info('Apple found')
-
-            time.sleep(1.0)
 
 
     def pixel_scale(self, x, y):
@@ -242,17 +240,49 @@ class MasterNode(Node):
         move_goal = MoveArm.Goal()
         move_goal.goal = arm_msg
 
-        self.send_absolute_move_goal(move_goal)
-    
-        return
+        if self.send_absolute_move_goal(move_goal):
+            return True
+        else:
+            self.get_logger().info('Could not reach for apple')
+            return False
         
 
     def grab_apple(self):
 
-        self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.05], 0.0, 2))
-        self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.0], 180.0, 0))
-        self.send_move_goal(self.format_move_goal([-0.2, 0.0, 0.0], 0.0, 0))
-        self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.0], 0.0, 1))
+        try:
+            # Pick Apple
+            if not (
+            self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.025], 0.0, 2))
+            and self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.0], 180.0, 0))
+            and self.send_move_goal(self.format_move_goal([-0.2, 0.0, 0.0], 0.0, 0))
+            and self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.0], 0.0, 0))
+            ):
+                self.get_logger().info('failed to perform pick apple movements')
+            else:
+                self.get_logger().info('finished pick apple movements')
+
+            
+            # Drop off apple
+            if not (
+            self.send_absolute_move_goal(self.format_move_goal([0.5, -0.28, 0.4], 0.0, 0))
+            and self.send_absolute_move_goal(self.format_move_goal([0.0, -0.28, 0.4], 0.0, 0))
+            ):
+                self.get_logger().info('Failed to drop off apple')
+                self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.0], 0.0, 1))
+            else:
+                self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.0], 0.0, 1))
+                self.get_logger().info('Dropped off apple')
+                self.send_absolute_move_goal(self.format_move_goal([0.5, -0.28, 0.4], 0.0, 0))
+                self.send_absolute_move_goal(self.format_move_goal([0.5, 0.0, 0.5], 0.0, 0))
+
+
+            
+
+        except KeyboardInterrupt:
+            self.get_logger().info('Abort, Opening Gripper')
+            self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.0], 0.0, 1))
+
+
 
 
         return
@@ -280,15 +310,19 @@ class MasterNode(Node):
         
         # Reach for the Apple
         if self.distance_msg is not None:
-            self.reach_apple()
+            if self.reach_apple():
+                # Grab the Apple
+                self.grab_apple()
+
 
         else:
             self.get_logger().info('No depth found \nPerfroming placeholder "reach for apple"')
             self.send_move_goal(self.format_move_goal([0.2, 0.0, 0.0], 1, 0))
-        
-        # Grab the Apple
-        self.grab_apple()
+            # Grab the Apple
+            self.grab_apple()
 
+        
+    
         return
     
 
