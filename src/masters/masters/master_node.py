@@ -114,7 +114,7 @@ class MasterNode(Node):
             self.get_logger().info('Goal rejected :(')
             return False
 
-        self.get_logger().info('Goal accepted :)')
+        self.get_logger().info(f'Goal accepted :) {goal_msg.goal.position.x}, {goal_msg.goal.position.y}, {goal_msg.goal.position.z}')
 
         result_future = goal_handle.get_result_async()
         #result_future.add_done_callback(self.get_result_callback)
@@ -134,9 +134,9 @@ class MasterNode(Node):
         end_search = False
 
         move_msg = ArmControl()
-        move_msg.position.x = 0.57
+        move_msg.position.x = 0.5
         move_msg.position.y = 0.0
-        move_msg.position.z = 0.45
+        move_msg.position.z = 0.35
         move_msg.gripper_state = 0
         move_msg.wrist_angle = 0.0
 
@@ -154,13 +154,13 @@ class MasterNode(Node):
             self.Masked_publisher.publish(mask_msg)
 
             if num_apples <= 0:
-                if move_goal.goal.position.y < 0.2:
+                if move_goal.goal.position.y < 0.3:
                     self.send_absolute_move_goal(move_goal)
                     self.get_logger().info(f'Published Search Arm Movement: {move_goal.goal.position.y}, {move_goal.goal.position.z}')
 
                     move_goal.goal.position.y += 0.1
                 
-                elif move_goal.goal.position.z < 0.7:
+                elif move_goal.goal.position.z < 0.6:
                     self.send_absolute_move_goal(move_goal)
                     self.get_logger().info(f'Published Search Arm Movement: {move_goal.goal.position.y}, {move_goal.goal.position.z}')
 
@@ -171,6 +171,7 @@ class MasterNode(Node):
                 else:
                     self.get_logger().info('No apples found')
                     end_search = True
+                    self.send_absolute_move_goal(self.format_move_goal([0.5, 0.0, 0.45], 0.0, 0))
 
             else:
                 end_search = True
@@ -180,7 +181,7 @@ class MasterNode(Node):
     def pixel_scale(self, x, y):
         xDesire = 640; 
         xDist = xDesire - x
-        xChange = 0.00040*xDist
+        xChange = 0.00025*xDist
 
         yDesire = 420; #was 420
         yDist = yDesire - y
@@ -191,39 +192,41 @@ class MasterNode(Node):
 
 
     def center_apple(self):
-        rclpy.spin_once(self)
+        apple_coordinates = None
+        while (apple_coordinates == None or not ((apple_coordinates[0].x <= 650 and apple_coordinates[0].x >= 630) and (apple_coordinates[0].y <= 430 and apple_coordinates[0].y >= 410))):
+            rclpy.spin_once(self)
 
-        move_msg = ArmControl()
+            move_msg = ArmControl()
 
-        image = CvBridge().imgmsg_to_cv2(self.image_msg)
+            image = CvBridge().imgmsg_to_cv2(self.image_msg)
 
-        num_apples, apple_coordinates, maskedImage = processImage(image)
-        self.get_logger().info('found %.d apples' % num_apples)
+            num_apples, apple_coordinates, maskedImage = processImage(image)
+            self.get_logger().info('found %.d apples' % num_apples)
 
-        for apple in apple_coordinates:
-            self.get_logger().info('Location: %.2f, %.2f' % (apple.x, apple.y))
+            for apple in apple_coordinates:
+                self.get_logger().info('Location: %.2f, %.2f' % (apple.x, apple.y))
 
-        mask_msg = CvBridge().cv2_to_imgmsg(cv2.multiply(maskedImage,255))
-        self.Masked_publisher.publish(mask_msg)
+            mask_msg = CvBridge().cv2_to_imgmsg(cv2.multiply(maskedImage,255))
+            self.Masked_publisher.publish(mask_msg)
 
-        if num_apples == 0:
-            self.get_logger().info('No apples found')
+            if num_apples == 0:
+                self.get_logger().info('No apples found')
 
-            return False
+                return False
 
 
-        # scale the coordinates and create message
-        move_msg.position.x = 0.0
-        move_msg.position.y, move_msg.position.z = self.pixel_scale(apple_coordinates[0].x, apple_coordinates[0].y)
-        move_msg.gripper_state = 0
-        move_msg.wrist_angle = 0.0
+            # scale the coordinates and create message
+            move_msg.position.x = 0.0
+            move_msg.position.y, move_msg.position.z = self.pixel_scale(apple_coordinates[0].x, apple_coordinates[0].y)
+            move_msg.gripper_state = 0
+            move_msg.wrist_angle = 0.0
 
-        move_goal = MoveArm.Goal()
-        move_goal.goal = move_msg
+            move_goal = MoveArm.Goal()
+            move_goal.goal = move_msg
 
-        # Publish Arm Movement
-        self.send_move_goal(move_goal)
-        self.get_logger().info(f'moved {move_msg.position.y} in y, {move_msg.position.z} in z')
+            # Publish Arm Movement
+            self.send_move_goal(move_goal)
+            self.get_logger().info(f'moved {move_msg.position.y} in y, {move_msg.position.z} in z')
         
         return True
 
@@ -263,6 +266,7 @@ class MasterNode(Node):
 
             
             # Drop off apple
+            self.send_absolute_move_goal(self.format_move_goal([0.5, 0.0, 0.4], 0.0, 0))
             if not (
             self.send_absolute_move_goal(self.format_move_goal([0.5, -0.28, 0.4], 0.0, 0))
             and self.send_absolute_move_goal(self.format_move_goal([0.0, -0.28, 0.4], 0.0, 0))
@@ -303,10 +307,10 @@ class MasterNode(Node):
         if not self.center_apple():
             return
         
-        # Do it again for better accuracy
-        self.get_logger().info('Centering Apple twice')
-        if not self.center_apple():
-            return
+        # # Do it again for better accuracy
+        # self.get_logger().info('Centering Apple twice')
+        # if not self.center_apple():
+        #     return
         
         # Reach for the Apple
         if self.distance_msg is not None:
