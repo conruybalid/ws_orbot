@@ -5,6 +5,7 @@ from sensor_msgs.msg import PointCloud2
 import sensor_msgs.msg
 import cv2
 from cv_bridge import CvBridge
+import numpy as np
 from get_pic.VideoQueue import VideoStreamHandler
 
 import pyzed.sl as sl
@@ -92,16 +93,17 @@ class ZedPublisher(Node):
         # Convert sl.Mat to numpy array
         image_np = zed_image.get_data()
 
-        # Convert the numpy array to an OpenCV image
-        # Note: Depending on the retrieval mode, you might need to convert the color space from BGR to RGB
-        # opencv_image = cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)
-
         # Use cv_bridge to convert the OpenCV image to a ROS 2 image message
         bridge = CvBridge()
-         
-        ros_image_msg = bridge.cv2_to_imgmsg(image_np, "8UC4")  
-
+        ros_image_msg = None
+        if image_np.dtype == np.uint8:
+            ros_image_msg = bridge.cv2_to_imgmsg(image_np, "8UC4")
+        elif image_np.dtype == np.float32:
+            ros_image_msg = bridge.cv2_to_imgmsg(image_np, "32FC1")
+        else:
+            self.get_logger().info('Invalid image data type')
         return ros_image_msg
+         
     
     def zed_point_cloud_to_ros_point_cloud2(self, zed_point_cloud):
         # Initialize the PointCloud2 message
