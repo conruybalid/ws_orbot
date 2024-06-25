@@ -97,8 +97,12 @@ class ZedPublisher(Node):
         bridge = CvBridge()
         ros_image_msg = None
         if image_np.dtype == np.uint8:
+            cv2.imshow('color source',image_np)
+            cv2.waitKey(0)
             ros_image_msg = bridge.cv2_to_imgmsg(image_np, "8UC4")
         elif image_np.dtype == np.float32:
+            cv2.imshow('depth source',image_np)
+            cv2.waitKey(0)
             ros_image_msg = bridge.cv2_to_imgmsg(image_np, "32FC1")
         else:
             self.get_logger().info('Invalid image data type')

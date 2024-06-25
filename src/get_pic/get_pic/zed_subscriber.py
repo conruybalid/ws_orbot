@@ -39,7 +39,7 @@ class VideoSubscriber(Node):
         self.bridge = CvBridge()
 
     def image_callback(self, msg):
-        self.get_logger().info('Received an image')
+        self.get_logger().info('Received a color image')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
         cv2.imshow('Color_Image', cv_image)
         cv2.waitKey(1)
@@ -47,6 +47,7 @@ class VideoSubscriber(Node):
     def depth_callback(self, msg):
         self.get_logger().info('Received a depth image')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
+        cv_image = cv2.multiply(cv_image,255)
         cv2.imshow('Depth_Image', cv_image)
         cv2.waitKey(1)
 
