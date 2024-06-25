@@ -167,7 +167,7 @@ from rclpy.node import Node
 
 class MyNode(Node):
   def __init__(self):
-    super().__init__('Master_Node')
+    super().__init__('my_node')
     
     # Create publishers and/or subscribers
 
