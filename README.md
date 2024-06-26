@@ -144,6 +144,11 @@ In a new terminal, start the master_node node (begin pick apple routine)
 ros2 run masters master_node
 ```
 
+Don't forget to source each new terminal with
+```console
+source install/setup.bash
+```
+
 
 # Creating your Own Stuff
 
