@@ -101,52 +101,37 @@ def example_trajectory(base, base_cyclic, waypointsDefinition):
     waypoints = Base_pb2.WaypointList()
     
     waypoints.duration = 0.0
-    waypoints.use_optimal_blending = False
+    waypoints.use_optimal_blending = True
     
     index = 0
     waypoint = waypoints.waypoints.add()
     waypoint.name = "waypoint_" + str(index)   
-    waypoint.cartesian_waypoint.CopyFrom(populateCartesianCoordinate(waypointsDefinition))
+    waypoint.cartesian_waypoint.CopyFrom(waypointsDefinition)
     index = index + 1 
 
     # Verify validity of waypoints
     result = base.ValidateWaypointList(waypoints)
-    if(len(result.trajectory_error_report.trajectory_error_elements) == 0):
-        e = threading.Event()
-        notification_handle = base.OnNotificationActionTopic(   check_for_end_or_abort(e),
-                                                                Base_pb2.NotificationOptions())
 
-        print("Moving cartesian trajectory...")
-        
+    if(len(result.trajectory_error_report.trajectory_error_elements) == 0):
+
+        print("Beginning Trajectory ...")
+        e_opt = threading.Event()
+        notification_handle_opt = base.OnNotificationActionTopic(   check_for_end_or_abort(e_opt),
+                                                            Base_pb2.NotificationOptions())
+
+        waypoints.use_optimal_blending = True
         base.ExecuteWaypointTrajectory(waypoints)
 
         print("Waiting for trajectory to finish ...")
-        finished = e.wait(TIMEOUT_DURATION)
-        base.Unsubscribe(notification_handle)
+        finished_opt = e_opt.wait(TIMEOUT_DURATION)
+        base.Unsubscribe(notification_handle_opt)
 
-        if finished:
-            print("Cartesian trajectory with no optimization completed ")
-            e_opt = threading.Event()
-            notification_handle_opt = base.OnNotificationActionTopic(   check_for_end_or_abort(e_opt),
-                                                                Base_pb2.NotificationOptions())
-
-            waypoints.use_optimal_blending = True
-            base.ExecuteWaypointTrajectory(waypoints)
-
-            print("Waiting for trajectory to finish ...")
-            finished_opt = e_opt.wait(TIMEOUT_DURATION)
-            base.Unsubscribe(notification_handle_opt)
-
-            if(finished_opt):
-                print("Cartesian trajectory with optimization completed ")
-            else:
-                print("Timeout on action notification wait for optimized trajectory")
-
-            return finished_opt
+        if(finished_opt):
+            print("Cartesian trajectory with optimization completed ")
         else:
-            print("Timeout on action notification wait for non-optimized trajectory")
+            print("Timeout on action notification wait for optimized trajectory")
 
-        return finished
+        return finished_opt
         
     else:
         print("Error found in trajectory") 
@@ -196,7 +181,8 @@ def main():
 
 
             # Update the waypointsDefinition with the new coordinates
-            waypointsDefinition = (coordinates[0] + tool_x, coordinates[1] + tool_y, coordinates[2] + tool_z, 0.0, 90.0, 180.0, 90.0)
+            waypointsDefinition = (coordinates[2], coordinates[0], coordinates[1], 0.0, 90.0, 0.0, 90.0)
+            waypointsDefinition = populateCartesianCoordinate(waypointsDefinition)
 
             success &= example_trajectory(base, base_cyclic, waypointsDefinition)
        

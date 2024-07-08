@@ -10,6 +10,8 @@ from custom_interfaces.action import MoveArm
 
 from masters.ImageProcess import processImage
 
+from kortex_api.autogen.messages import Base_pb2
+
 import cv2
 from cv_bridge import CvBridge
 import time
@@ -56,12 +58,7 @@ class MasterNode(Node):
         self.depth_msg = None
         self.distance_msg = None
 
-        self.move_publisher = self.create_publisher(ArmControl, 'arm_move', 10)
-        self.absolute_move_publisher = self.create_publisher(ArmControl, 'absolute_arm_move', 10)
-
         self.arm_action_client = ActionClient(self, MoveArm, 'move_arm_action')
-        self.arm_absolute_action_client = ActionClient(self, MoveArm, 'absolute_move_arm_action')
-        
 
         self.Masked_publisher = self.create_publisher(Image, 'masked_image_topic', 10)
 
@@ -96,32 +93,12 @@ class MasterNode(Node):
         return response
     
 
-    def publish_arm_movement(self, position, wrist_angle, gripper_state):
-        """
-        LEGACY
-        Used to publish arm movement commands to the arm_move topic.
-        """
-        msg = ArmControl()
-        if isinstance(position, list):
-            msg.position.x = position[0]
-            msg.position.y = position[1]
-            msg.position.z = position[2]
-        else:
-            self.get_logger().error('Invalid position type')
-            return
-        msg.wrist_angle = float(wrist_angle)
-        msg.gripper_state = gripper_state
-        self.move_publisher.publish(msg)
-        self.get_logger().info('Published Arm Movement')
-
-
-
     """
     ARM MOVEMENT FUNCTIONS
     These Functions are used to send arm movement goals to the arm action server.
     """
 
-    def format_move_goal(self, position, wrist_angle, gripper_state):
+    def format_move_goal(self, position=[0.0,0.0,0.0], angle=[0.0,0.0,0.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL):
         """
         Quickly formates a goal that can be sent to the arm action server.
         """
@@ -129,14 +106,17 @@ class MasterNode(Node):
         goal_msg.goal.position.x = position[0]
         goal_msg.goal.position.y = position[1]
         goal_msg.goal.position.z = position[2]
-        goal_msg.goal.wrist_angle = float(wrist_angle)
+        goal_msg.goal.angle.x = angle[0]
+        goal_msg.goal.angle.y = angle[1]
+        goal_msg.goal.angle.z = angle[2]
+        goal_msg.goal.reference_frame = reference_frame
         goal_msg.goal.gripper_state = gripper_state
 
         return goal_msg
     
     def send_move_goal(self, goal_msg):
         """
-        Sends a relative arm movement goal to the arm action server.
+        Sends an waypoint goal to the arm action server.
         Waits for the server to respond and returns the result.
         """
 
@@ -161,33 +141,6 @@ class MasterNode(Node):
         
         return result.result
 
-    def send_absolute_move_goal(self, goal_msg):
-        """
-        Sends an absolute arm movement goal to the arm action server.
-        Waits for the server to respond and returns the result.
-        """
-
-        self.arm_absolute_action_client.wait_for_server()
-        future = self.arm_absolute_action_client.send_goal_async(goal_msg)
-        #future.add_done_callback(self.goal_response_callback)
-        rclpy.spin_until_future_complete(self, future)
-
-        goal_handle = future.result()
-        if not goal_handle.accepted:
-            self.get_logger().info('Goal rejected :(')
-            return False
-
-        self.get_logger().info(f'Goal accepted :) {goal_msg.goal.position.x}, {goal_msg.goal.position.y}, {goal_msg.goal.position.z}')
-
-        result_future = goal_handle.get_result_async()
-        #result_future.add_done_callback(self.get_result_callback)
-        rclpy.spin_until_future_complete(self, result_future)
-        result = result_future.result().result
-        self.get_logger().info(f'Move Result: {result.result}')
-
-        
-        return result.result
-
     
 
     """
@@ -200,11 +153,14 @@ class MasterNode(Node):
         end_search = False
 
         move_msg = ArmControl()
-        move_msg.position.x = 0.5
-        move_msg.position.y = 0.0
-        move_msg.position.z = 0.35
+        move_msg.position.x = 0.0
+        move_msg.position.y = 0.35
+        move_msg.position.z = 0.5
+        move_msg.angle.x = 0.0
+        move_msg.angle.y = 90.0
+        move_msg.angle.z = 90.0
+        move_msg.reference_frame = Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE
         move_msg.gripper_state = 0
-        move_msg.wrist_angle = 0.0
 
         move_goal = MoveArm.Goal()
         move_goal.goal = move_msg
@@ -220,24 +176,24 @@ class MasterNode(Node):
             self.Masked_publisher.publish(mask_msg)
 
             if num_apples <= 0:
-                if move_goal.goal.position.y < 0.3:
-                    self.send_absolute_move_goal(move_goal)
-                    self.get_logger().info(f'Published Search Arm Movement: {move_goal.goal.position.y}, {move_goal.goal.position.z}')
+                if move_goal.goal.position.x < 0.3:
+                    self.send_move_goal(move_goal)
+                    self.get_logger().info(f'Published Search Arm Movement: {move_goal.goal.position.x}, {move_goal.goal.position.y}')
+
+                    move_goal.goal.position.x += 0.1
+                
+                elif move_goal.goal.position.y < 0.6:
+                    self.send_move_goal(move_goal)
+                    self.get_logger().info(f'Published Search Arm Movement: {move_goal.goal.position.x}, {move_goal.goal.position.y}')
 
                     move_goal.goal.position.y += 0.1
-                
-                elif move_goal.goal.position.z < 0.6:
-                    self.send_absolute_move_goal(move_goal)
-                    self.get_logger().info(f'Published Search Arm Movement: {move_goal.goal.position.y}, {move_goal.goal.position.z}')
-
-                    move_goal.goal.position.z += 0.1
-                    move_goal.goal.position.y = 0.0
+                    move_goal.goal.position.x = 0.0
                     
 
                 else:
                     self.get_logger().info('No apples found')
                     end_search = True
-                    self.send_absolute_move_goal(self.format_move_goal([0.5, 0.0, 0.45], 0.0, 0))
+                    self.send_move_goal(self.format_move_goal([0.0, 0.45, 0.5]))
 
             else:
                 end_search = True
@@ -282,17 +238,21 @@ class MasterNode(Node):
 
 
             # scale the coordinates and create message
-            move_msg.position.x = 0.0
-            move_msg.position.y, move_msg.position.z = self.pixel_scale(apple_coordinates[0].x, apple_coordinates[0].y)
+            move_msg.position.z = 0.0
+            move_msg.position.x, move_msg.position.y = self.pixel_scale(apple_coordinates[0].x, apple_coordinates[0].y)
+            move_msg.angle.x = 0.0
+            move_msg.angle.y = 0.0
+            move_msg.angle.z = 0.0        
             move_msg.gripper_state = 0
-            move_msg.wrist_angle = 0.0
+            move_msg.reference_frame = Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL
+
 
             move_goal = MoveArm.Goal()
             move_goal.goal = move_msg
 
             # Publish Arm Movement
             self.send_move_goal(move_goal)
-            self.get_logger().info(f'moved {move_msg.position.y} in y, {move_msg.position.z} in z')
+            self.get_logger().info(f'moved {move_msg.position.x} in x, {move_msg.position.y} in y')
         
         return True
     
@@ -326,11 +286,15 @@ class MasterNode(Node):
 
         self.get_logger().info('found apple at absolute distance %f' % self.distance_msg.data)
         arm_msg = ArmControl()
-        arm_msg.position.x = self.distance_msg.data
+        arm_msg.position.x = 99.0
         arm_msg.position.y = 99.0
-        arm_msg.position.z = 99.0
+        arm_msg.position.z = self.distance_msg.data
+        arm_msg.angle.x = 0.0
+        arm_msg.angle.y = 90.0
+        arm_msg.angle.z = 90.0        
+        arm_msg.reference_frame = Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE 
         arm_msg.gripper_state = 1
-        arm_msg.wrist_angle = 0.0
+        
 
         move_goal = MoveArm.Goal()
         move_goal.goal = arm_msg
@@ -351,10 +315,9 @@ class MasterNode(Node):
         try:
             # Pick Apple
             if not (
-            self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.025], 0.0, 2))
-            and self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.0], 180.0, 0))
-            and self.send_move_goal(self.format_move_goal([-0.2, 0.0, 0.0], 0.0, 0))
-            and self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.0], 0.0, 0))
+            self.send_move_goal(self.format_move_goal(position=[0.0, 0.025, 0.0], gripper_state=2, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL))
+            and self.send_move_goal(self.format_move_goal(angle=[0.0, 0.0, 100.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL))
+            and self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, -0.2], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL))
             ):
                 self.get_logger().info('failed to perform pick apple movements')
             else:
@@ -362,25 +325,23 @@ class MasterNode(Node):
 
             
             # Drop off apple
-            self.send_absolute_move_goal(self.format_move_goal([0.5, 0.0, 0.4], 0.0, 0))
+            # self.send_move_goal(self.format_move_goal([0.0, 0.5, 0.6], angle=[0.0, 90.0, 90.0] gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+
             if not (
-            self.send_absolute_move_goal(self.format_move_goal([0.5, -0.28, 0.4], 0.0, 0))
-            and self.send_absolute_move_goal(self.format_move_goal([0.0, -0.28, 0.4], 0.0, 0))
+            self.send_move_goal(self.format_move_goal(position=[-0.3, 0.4, 0.0], angle=[0.0, 90.0, 180.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
             ):
                 self.get_logger().info('Failed to drop off apple')
-                self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.0], 0.0, 1))
+                self.send_move_goal(self.format_move_goal(gripper_state=1))
             else:
-                self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.0], 0.0, 1))
                 self.get_logger().info('Dropped off apple')
-                self.send_absolute_move_goal(self.format_move_goal([0.5, -0.28, 0.4], 0.0, 0))
-                self.send_absolute_move_goal(self.format_move_goal([0.5, 0.0, 0.5], 0.0, 0))
+                self.send_move_goal(self.format_move_goal(position=[0.0, 0.5, 0.5], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
 
 
             
 
         except KeyboardInterrupt:
             self.get_logger().info('Abort, Opening Gripper')
-            self.send_move_goal(self.format_move_goal([0.0, 0.0, 0.0], 0.0, 1))
+            self.send_move_goal(self.format_move_goal(gripper_state=1))
 
 
 
@@ -416,7 +377,7 @@ class MasterNode(Node):
 
         else:
             self.get_logger().info('No depth found \nPerfroming placeholder "reach for apple"')
-            self.send_move_goal(self.format_move_goal([0.2, 0.0, 0.0], 1, 0))
+            self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, 0.2]))
             # Grab the Apple
             self.grab_apple()
 
@@ -433,9 +394,11 @@ class MasterNode(Node):
     def test(self):
         self.get_logger().info('Testing')
         
-        self.send_move_goal(self.format_move_goal([0.2, 0.0, 0.0], 0, 0))
+        self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, 0.2]))
         self.get_logger().info('Forward Goal Sent')
-        self.send_move_goal(self.format_move_goal([-0.2, 0.0, 0.0], 0, 0))
+        self.send_move_goal(self.format_move_goal(gripper_state=2))
+        self.send_move_goal(self.format_move_goal(angle=[0.0, 0.0, 100.0]))
+        self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, -0.2], angle=[0.0, 0.0, -100.0], gripper_state=1))
         self.get_logger().info('Backward Goal Sent')
 
         self.get_logger().info('Test Complete')
@@ -454,10 +417,10 @@ def main(args=None):
     """
     rclpy.init(args=args)
     node = MasterNode()
+    rclpy.spin_once(node)
     node.run() # Run the main routine
     node.get_logger().info('Destroying Master Node')
-    node.action_client.destroy()
-    node.absolute_action_client.destroy()
+    node.arm_action_client.destroy()
     node.destroy_node()
     rclpy.shutdown()
 

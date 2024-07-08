@@ -26,14 +26,6 @@ class MoveArmServer(Node):
             self.execute_callback
         )
 
-        self.absolute_action_server = ActionServer(
-            self,
-            MoveArm,
-            'absolute_move_arm_action',
-            self.execute_absolute_callback
-        )
-
-
         self.args = utilities.parseConnectionArguments()
 
         # Create connection to the device and get the router
@@ -46,6 +38,46 @@ class MoveArmServer(Node):
             success = True
 
             success &= example_move_to_home_position(base)
+
+
+    def FormatWaypoint(self, waypointInformation: MoveArm.Goal, feedback: BaseCyclic_pb2.Feedback):
+        waypoint = Base_pb2.CartesianWaypoint()
+        
+        if waypointInformation.reference_frame == Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL:
+            waypoint.pose.x = waypointInformation.position.x
+            waypoint.pose.y = waypointInformation.position.y
+            waypoint.pose.z = waypointInformation.position.z
+            waypoint.blending_radius = 0.0
+            waypoint.pose.theta_x = waypointInformation.angle.x
+            waypoint.pose.theta_y = waypointInformation.angle.y
+            waypoint.pose.theta_z = waypointInformation.angle.z 
+            waypoint.reference_frame = waypointInformation.reference_frame
+
+        elif waypointInformation.reference_frame == Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE:
+            
+            if waypointInformation.position.z == 99.0:
+                waypoint.pose.x = feedback.base.tool_pose_x
+            else:
+                waypoint.pose.x = waypointInformation.position.z
+            
+            if waypointInformation.position.x == 99.0:
+                waypoint.pose.y = feedback.base.tool_pose_y
+            else:
+                waypoint.pose.y = waypointInformation.position.x
+
+            if waypointInformation.position.y == 99.0:
+                waypoint.pose.z = feedback.base.tool_pose_z
+            else:
+                waypoint.pose.z = waypointInformation.position.y
+
+            waypoint.blending_radius = 0.0
+            waypoint.pose.theta_x = waypointInformation.angle.z
+            waypoint.pose.theta_y = waypointInformation.angle.x
+            waypoint.pose.theta_z = waypointInformation.angle.y 
+            waypoint.reference_frame = waypointInformation.reference_frame
+        
+        return waypoint
+
 
 
     def execute_callback(self, goal_handle):
@@ -64,7 +96,6 @@ class MoveArmServer(Node):
 
         with utilities.DeviceConnection.createTcpConnection(self.args) as router:
             point = goal.position
-            wrist_angle = goal.wrist_angle
             gripper_state = goal.gripper_state
         
             # Create required services
@@ -84,7 +115,7 @@ class MoveArmServer(Node):
             success = True   
 
             # Update the waypointsDefinition with the new coordinates
-            waypointsDefinition = (coordinates[0], coordinates[1], coordinates[2], 0.0, 90.0, wrist_angle, 90.0)
+            waypointsDefinition = self.FormatWaypoint(goal, feedback)
 
             try:
                 success &= example_trajectory(base, base_cyclic, waypointsDefinition)
@@ -111,79 +142,6 @@ class MoveArmServer(Node):
         
         return result
     
-    def execute_absolute_callback(self, goal_handle):
-        # Implement your action server logic here
-        # You can access the goal, feedback, and result using goal_handle
-        # For example:
-        goal = goal_handle.request.goal
-        feedback = MoveArm.Feedback()
-        result = MoveArm.Result()
-
-        # Publish feedback periodically
-        # # Update feedback values
-        # feedback.feedback = "Beginning movement..."
-        # # Publish feedback
-        # goal_handle.publish_feedback(feedback)
-
-        with utilities.DeviceConnection.createTcpConnection(self.args) as router:
-            point = goal.position
-            wrist_angle = goal.wrist_angle
-            gripper_state = goal.gripper_state
-        
-            # Create required services
-            base = BaseClient(router)
-            base_cyclic = BaseCyclicClient(router)     
-            
-            feedback = base_cyclic.RefreshFeedback()
-
-            
-            self.gripper_control(base, gripper_state)
-
-            # Accessing the X, Y, Z position of the tool
-            arm_x = feedback.base.tool_pose_x
-            arm_y = feedback.base.tool_pose_y
-            arm_z = feedback.base.tool_pose_z
-
-            if point.x == 99.0:
-                point.x = arm_x
-            if point.y == 99.0:
-                point.y = arm_y
-            if point.z == 99.0:
-                point.z = arm_z
-
-
-            # Get the coordinates from the user
-            coordinates = [point.x, point.y, point.z]
-
-            success = True   
-
-            # Update the waypointsDefinition with the new coordinates
-            waypointsDefinition = (coordinates[0], coordinates[1], coordinates[2], 0.0, 90.0, wrist_angle, 90.0)
-
-            try:
-                success &= example_trajectory(base, base_cyclic, waypointsDefinition)
-            except:
-                self.get_logger().info(f'Error in trajectory: {coordinates[0]}, {coordinates[1]}, {coordinates[2]}')
-                goal_handle.abort()
-                result.result = False
-            
-            self.get_logger().info('Moved to position: %f, %f, %f' % (feedback.base.tool_pose_x, feedback.base.tool_pose_y, feedback.base.tool_pose_z))
-
-
-            
-
-
-        # Check if the action was canceled
-        if goal_handle.is_cancel_requested:
-            goal_handle.canceled()
-            result.result = False
-        else:
-            # Set the result
-            result.result = True  
-            goal_handle.succeed()
-        
-        return result
-
 
     def gripper_control(self, base, gripper_state):
         # Create the GripperCommand we will send
