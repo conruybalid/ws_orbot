@@ -64,6 +64,8 @@ class MasterNode(Node):
 
         self.Masked_publisher = self.create_publisher(Image, 'masked_image_topic', 10)
 
+        self.get_logger().info('Master Node Initialized')
+
     """
     Callback functions for the subscriptions.
     Called whenever a message is received from the respective topic.
@@ -103,7 +105,6 @@ class MasterNode(Node):
         Calls the zed location service to get the location of the apple in the image.
         """
         request = GetLocation.Request()
-        request.image = self.image_msg
 
         future = self.zed_client.call_async(request)
         rclpy.spin_until_future_complete(self, future)
@@ -227,10 +228,15 @@ class MasterNode(Node):
     """
 
     def Go_to_Apple(self):
-        x, y, self.distance = self.call_zed_service()
+        self.get_logger().info('Asking Camera for Apple Location')
+        point = self.call_zed_service().apple_coordinates
+        x = point.x
+        y = point.y
+        self.distance = point.z 
         self.get_logger().info(f'Apple at {x}, {y}, {self.distance}')
 
-        self.send_move_goal(self.format_move_goal(position=[x, y, self.distance - 0.2], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+        #Adjust coordinates so that the camera can see the apple
+        self.send_move_goal(self.format_move_goal(position=[x, y - 0.025, self.distance - 0.2], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
 
         return
 
@@ -311,11 +317,11 @@ class MasterNode(Node):
         this function can be used to reach out to the apple.
         """
 
-        self.get_logger().info('found apple at absolute distance %f' % self.distance_msg.data)
+        self.get_logger().info('Reaching for Apple at absolute distance %f' % self.distance)
         arm_msg = ArmControl()
         arm_msg.position.x = 99.0
         arm_msg.position.y = 99.0
-        arm_msg.position.z = self.distance_msg.data
+        arm_msg.position.z = self.distance
         arm_msg.angle.x = 0.0
         arm_msg.angle.y = 90.0
         arm_msg.angle.z = 90.0        
@@ -388,7 +394,7 @@ class MasterNode(Node):
             self.get_logger().info('Waiting for images')
             rclpy.spin_once(self)
 
-        self.Search()
+        self.Go_to_Apple()
 
         # Center the apple
         self.get_logger().info('Centering Apple')
@@ -396,7 +402,7 @@ class MasterNode(Node):
             return
         
         # Reach for the Apple
-        if self.distance_msg is not None:
+        if self.distance is not None:
             if self.reach_apple():
                 # Grab the Apple
                 self.grab_apple()
@@ -421,12 +427,12 @@ class MasterNode(Node):
     def test(self):
         self.get_logger().info('Testing')
         
-        self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, 0.2]))
-        self.get_logger().info('Forward Goal Sent')
-        self.send_move_goal(self.format_move_goal(gripper_state=2))
-        self.send_move_goal(self.format_move_goal(angle=[0.0, 0.0, 100.0]))
-        self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, -0.2], angle=[0.0, 0.0, -100.0], gripper_state=1))
-        self.get_logger().info('Backward Goal Sent')
+        # self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, 0.2]))
+        # self.get_logger().info('Forward Goal Sent')
+        # self.send_move_goal(self.format_move_goal(gripper_state=2))
+        # self.send_move_goal(self.format_move_goal(angle=[0.0, 0.0, 100.0]))
+        # self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, -0.2], angle=[0.0, 0.0, -100.0], gripper_state=1))
+        # self.get_logger().info('Backward Goal Sent')
 
         self.Go_to_Apple()
 
@@ -449,7 +455,7 @@ def main(args=None):
     rclpy.init(args=args)
     node = MasterNode()
     rclpy.spin_once(node)
-    node.test() # Run the main routine
+    node.run() # Run the main routine
     node.get_logger().info('Destroying Master Node')
     node.arm_action_client.destroy()
     node.destroy_node()

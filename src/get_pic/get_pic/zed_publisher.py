@@ -89,7 +89,7 @@ class ZedPublisher(Node):
             self.get_logger().info('self.point_cloud is None')
     
     
-    def sl_mat_to_ros_image(self, zed_image):
+    def sl_mat_to_ros_image(self, zed_image: sl.Mat):
         # Convert sl.Mat to numpy array
         image_np = zed_image.get_data()
 
@@ -98,11 +98,12 @@ class ZedPublisher(Node):
         ros_image_msg = None
         if image_np.dtype == np.uint8:
             cv2.imshow('color source',image_np)
-            cv2.waitKey(0)
+            cv2.waitKey(1)
             ros_image_msg = bridge.cv2_to_imgmsg(image_np, "8UC4")
         elif image_np.dtype == np.float32:
-            cv2.imshow('depth source',image_np)
-            cv2.waitKey(0)
+            depth_np = np.nan_to_num(depth_np, nan=0.0, posinf=2450.0)
+            cv2.imshow('depth source',depth_np)
+            cv2.waitKey(1)
             ros_image_msg = bridge.cv2_to_imgmsg(image_np, "32FC1")
         else:
             self.get_logger().info('Invalid image data type')
@@ -147,12 +148,19 @@ class ZedPublisher(Node):
                 
 
 def main(args=None):
+    
     rclpy.init(args=args)
     zed_publisher = ZedPublisher()
-    # Check if the stream is opened successfully  
-    rclpy.spin(zed_publisher)
-    zed_publisher.destroy_node()
-    rclpy.shutdown()
+    try:
+        # Check if the stream is opened successfully  
+        rclpy.spin(zed_publisher)
+        zed_publisher.destroy_node()
+        rclpy.shutdown()
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt")
+        zed_publisher.destroy_node()
+        rclpy.shutdown()
+        
 
 if __name__ == '__main__':
     main()
