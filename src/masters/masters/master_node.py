@@ -154,7 +154,7 @@ class MasterNode(Node):
 
         move_msg = ArmControl()
         move_msg.position.x = 0.0
-        move_msg.position.y = 0.35
+        move_msg.position.y = 0.45
         move_msg.position.z = 0.5
         move_msg.angle.x = 0.0
         move_msg.angle.y = 90.0
