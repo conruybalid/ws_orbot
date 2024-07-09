@@ -27,12 +27,13 @@ class MoveArmServer(Node):
         )
 
         self.args = utilities.parseConnectionArguments()
+        self.router = None
 
         # Create connection to the device and get the router
-        with utilities.DeviceConnection.createTcpConnection(self.args) as router:
+        with utilities.DeviceConnection.createTcpConnection(self.args) as test_router:
 
             # Create required services
-            base = BaseClient(router)
+            base = BaseClient(test_router)
             
             # Example core
             success = True
@@ -94,41 +95,41 @@ class MoveArmServer(Node):
         # # Publish feedback
         # goal_handle.publish_feedback(feedback)
 
-        with utilities.DeviceConnection.createTcpConnection(self.args) as router:
-            point = goal.position
-            gripper_state = goal.gripper_state
+        #with utilities.DeviceConnection.createTcpConnection(self.args) as router:
+        point = goal.position
+        gripper_state = goal.gripper_state
+    
+        # Create required services
+        base = BaseClient(self.router)
+        base_cyclic = BaseCyclicClient(self.router)     
         
-            # Create required services
-            base = BaseClient(router)
-            base_cyclic = BaseCyclicClient(router)     
-            
-            feedback = base_cyclic.RefreshFeedback()
+        feedback = base_cyclic.RefreshFeedback()
 
-            # Accessing the X, Y, Z position of the tool
-            arm_x = feedback.base.tool_pose_x
-            arm_y = feedback.base.tool_pose_y
-            arm_z = feedback.base.tool_pose_z
+        # Accessing the X, Y, Z position of the tool
+        arm_x = feedback.base.tool_pose_x
+        arm_y = feedback.base.tool_pose_y
+        arm_z = feedback.base.tool_pose_z
 
-            # Get the coordinates from the user
-            coordinates = [point.x + arm_x, point.y + arm_y, point.z + arm_z]
+        # Get the coordinates from the user
+        coordinates = [point.x + arm_x, point.y + arm_y, point.z + arm_z]
 
-            success = True   
+        success = True   
 
-            # Update the waypointsDefinition with the new coordinates
-            waypointsDefinition = self.FormatWaypoint(goal, feedback)
+        # Update the waypointsDefinition with the new coordinates
+        waypointsDefinition = self.FormatWaypoint(goal, feedback)
 
-            try:
-                success &= example_trajectory(base, base_cyclic, waypointsDefinition)
-            except:
-                self.get_logger().info(f'Error in trajectory: {coordinates[0]}, {coordinates[1]}, {coordinates[2]}')
-                goal_handle.abort()
-                result.result = False
-            
-            self.get_logger().info('Moved to position: %f, %f, %f' % (feedback.base.tool_pose_x, feedback.base.tool_pose_y, feedback.base.tool_pose_z))
+        try:
+            success &= example_trajectory(base, base_cyclic, waypointsDefinition)
+        except:
+            self.get_logger().info(f'Error in trajectory: {coordinates[0]}, {coordinates[1]}, {coordinates[2]}')
+            goal_handle.abort()
+            result.result = False
+        
+        self.get_logger().info('Moved to position: %f, %f, %f' % (feedback.base.tool_pose_x, feedback.base.tool_pose_y, feedback.base.tool_pose_z))
 
-            self.gripper_control(base, gripper_state)
+        self.gripper_control(base, gripper_state)
 
-            
+        
 
 
         # Check if the action was canceled
@@ -207,7 +208,9 @@ class MoveArmServer(Node):
 def main(args=None):
     rclpy.init(args=args)
     action_server = MoveArmServer()
-    rclpy.spin(action_server)
+    with utilities.DeviceConnection.createTcpConnection(action_server.args) as router:
+        action_server.router = router
+        rclpy.spin(action_server)
     action_server.destroy_node()
     rclpy.shutdown()
 
