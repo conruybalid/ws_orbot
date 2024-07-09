@@ -103,26 +103,29 @@ class ZedPublisher(Node):
             if len(contours) > 0:
                 largest_contour = max(contours, key=cv2.contourArea)
                 M = cv2.moments(largest_contour)
-                center_x = int(M["m10"] / M["m00"])
-                center_y = int(M["m01"] / M["m00"])
+                if M["m00"] > 0:
+                    center_x = int(M["m10"] / M["m00"])
+                    center_y = int(M["m01"] / M["m00"])
 
-                # Get the depth value at the center of the mask
-                depth_value = self.depth.get_value(center_x, center_y)
+                    # Get the depth value at the center of the mask
+                    depth_value = self.depth.get_value(center_x, center_y)
 
-                # # Convert the center coordinates from pixels to meters
-                # x_distance = center_x * depth_value[1] / width
-                # y_distance = center_y * depth_value[1] /height
-            
-                depth_value = depth_value[1] - 200 # Get the depth value in mm
-                depth_value = depth_value/1000 # Convert the depth value to meters
-                print("Depth at center of red mask: {} m".format(depth_value))
-                # print("Distance from left of the image (x-axis): {} meters".format(x_distance))
-                # print("Distance from top of the image (y-axis): {} meters".format(y_distance))
-                depth_msg = Float32()
-                depth_msg.data = depth_value
-                self.distancepublisher_.publish(depth_msg)
-                mask_msg = CvBridge().cv2_to_imgmsg(mask)
-                self.maskpublisher.publish(mask_msg)
+                    # # Convert the center coordinates from pixels to meters
+                    # x_distance = center_x * depth_value[1] / width
+                    # y_distance = center_y * depth_value[1] /height
+                
+                    depth_value = depth_value[1] - 200 # Get the depth value in mm
+                    depth_value = depth_value/1000 # Convert the depth value to meters
+                    print("Depth at center of red mask: {} m".format(depth_value))
+                    # print("Distance from left of the image (x-axis): {} meters".format(x_distance))
+                    # print("Distance from top of the image (y-axis): {} meters".format(y_distance))
+                    depth_msg = Float32()
+                    depth_msg.data = depth_value
+                    self.distancepublisher_.publish(depth_msg)
+                    mask_msg = CvBridge().cv2_to_imgmsg(mask)
+                    self.maskpublisher.publish(mask_msg)
+                else:
+                    print("No red mask found. (Too Small)")
 
             else:
                 print("No red mask found.")
