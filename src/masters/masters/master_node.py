@@ -55,6 +55,8 @@ class MasterNode(Node):
         self.image_sub = self.create_subscription(Image, 'image_topic', self.image_callback, 10)
         self.depth_sub = self.create_subscription(Image, 'depth_topic', self.depth_callback, 10)
         self.zed_client = self.create_client(GetLocation, 'zed_location_service')
+        while not self.zed_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('zed_location_service not available, waiting again...')
         self.distance_sub = self.create_subscription(Float32, 'zed_distance_topic', self.distance_callback, 10)
         self.image_msg = None
         self.depth_msg = None
@@ -147,10 +149,10 @@ class MasterNode(Node):
 
         goal_handle = future.result()
         if not goal_handle.accepted:
-            self.get_logger().info('Goal rejected :(')
+            self.get_logger().info('Move Goal rejected :(')
             return False
 
-        self.get_logger().info('Goal accepted :)')
+        self.get_logger().info('Move Goal accepted :)')
 
         result_future = goal_handle.get_result_async()
         #result_future.add_done_callback(self.get_result_callback)
@@ -233,12 +235,21 @@ class MasterNode(Node):
         x = point.x
         y = point.y
         self.distance = point.z 
-        self.get_logger().info(f'Apple at {x}, {y}, {self.distance}')
+
+        if (x == 0.0 and y == 0.0 and self.distance == 0.0):
+            self.get_logger().info('No apple found')
+            return False
+        else:
+            self.get_logger().info(f'Apple at {x}, {y}, {self.distance}')
 
         #Adjust coordinates so that the camera can see the apple
-        self.send_move_goal(self.format_move_goal(position=[x, y - 0.025, self.distance - 0.2], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+        if (self.send_move_goal(self.format_move_goal(position=[x, y - 0.025, self.distance - 0.2], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))):
+            self.get_logger().info('Moved to apple location')
+        else:
+            self.get_logger().info('Failed to move to apple location')
+            return False
 
-        return
+        return True
 
     def center_apple(self):
         """
@@ -394,7 +405,8 @@ class MasterNode(Node):
             self.get_logger().info('Waiting for images')
             rclpy.spin_once(self)
 
-        self.Go_to_Apple()
+        if not self.Go_to_Apple():
+            return
 
         # Center the apple
         self.get_logger().info('Centering Apple')
