@@ -25,16 +25,16 @@ class MaskedSubscriber(Node):
         self.bridge = CvBridge()
 
     def image_callback(self, msg):
-        self.get_logger().info('Received a zed mask')
+        self.get_logger().info('Received an arm camera mask')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
         cv2.imshow('Masked_Image', cv_image)
-        cv2.waitKey(0)
+        cv2.waitKey(1)
 
     def zed_callback(self, msg):
         self.get_logger().info('Received a zed mask')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
         cv2.imshow('Masked_Zed_Image', cv_image)
-        cv2.waitKey(0)
+        cv2.waitKey(1)
 
 def main(args=None):
     rclpy.init(args=args)
