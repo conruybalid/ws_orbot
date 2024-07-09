@@ -7,6 +7,7 @@ from std_msgs.msg import Float32
 
 from custom_interfaces.msg import ArmControl
 from custom_interfaces.action import MoveArm
+from custom_interfaces.srv import GetLocation
 
 from masters.ImageProcess import processImage
 
@@ -53,6 +54,7 @@ class MasterNode(Node):
         super().__init__('Master_Node')
         self.image_sub = self.create_subscription(Image, 'image_topic', self.image_callback, 10)
         self.depth_sub = self.create_subscription(Image, 'depth_topic', self.depth_callback, 10)
+        self.zed_client = self.create_client(GetLocation, 'zed_location_service')
         self.distance_sub = self.create_subscription(Float32, 'zed_distance_topic', self.distance_callback, 10)
         self.image_msg = None
         self.depth_msg = None
@@ -91,6 +93,23 @@ class MasterNode(Node):
         response = self.future.result()
         self.future = None
         return response
+    
+    
+    """
+    ZED LOCATION SERVICE CALL
+    """
+    def call_zed_service(self):
+        """
+        Calls the zed location service to get the location of the apple in the image.
+        """
+        request = GetLocation.Request()
+        request.image = self.image_msg
+
+        future = self.zed_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response = future.result()
+        return response
+    
     
 
     """
@@ -140,8 +159,8 @@ class MasterNode(Node):
 
         
         return result.result
-
     
+
 
     """
     SEARCH FUNCTION
@@ -206,6 +225,14 @@ class MasterNode(Node):
     CENTER APPLE FUNCTIONS
     These functions are used to center the apple in the frame.
     """
+
+    def Go_to_Apple(self):
+        x, y, self.distance = self.call_zed_service()
+        self.get_logger().info(f'Apple at {x}, {y}, {self.distance}')
+
+        self.send_move_goal(self.format_move_goal(position=[x, y, self.distance - 0.2], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+
+        return
 
     def center_apple(self):
         """
@@ -401,6 +428,10 @@ class MasterNode(Node):
         self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, -0.2], angle=[0.0, 0.0, -100.0], gripper_state=1))
         self.get_logger().info('Backward Goal Sent')
 
+        self.Go_to_Apple()
+
+        self.send_move_goal(self.format_move_goal(position=[0.0, 0.5, 0.5], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+
         self.get_logger().info('Test Complete')
         return
 
@@ -418,7 +449,7 @@ def main(args=None):
     rclpy.init(args=args)
     node = MasterNode()
     rclpy.spin_once(node)
-    node.run() # Run the main routine
+    node.test() # Run the main routine
     node.get_logger().info('Destroying Master Node')
     node.arm_action_client.destroy()
     node.destroy_node()

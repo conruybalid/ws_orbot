@@ -96,7 +96,7 @@ class ZedPublisher(Node):
                     # # Convert the center coordinates to meters
                     x_distance = (-x + 402) / 1000
                     y_distance = (y + 420) / 1000
-                    z_distance = z / 1000
+                    z_distance = (z - 200) / 1000
 
                     self.get_logger().info(f'x_distance: {x_distance}, y_distance: {y_distance}, z_distance: {z_distance}')
 
