@@ -299,7 +299,7 @@ class MasterNode(Node):
         move_goal = MoveArm.Goal()
         move_goal.goal = arm_msg
 
-        if self.send_absolute_move_goal(move_goal):
+        if self.send_move_goal(move_goal):
             return True
         else:
             self.get_logger().info('Could not reach for apple')
@@ -325,7 +325,7 @@ class MasterNode(Node):
 
             
             # Drop off apple
-            # self.send_move_goal(self.format_move_goal([0.0, 0.5, 0.6], angle=[0.0, 90.0, 90.0] gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+            self.send_move_goal(self.format_move_goal(position=[0.0, 0.4, 0.6], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
 
             if not (
             self.send_move_goal(self.format_move_goal(position=[-0.3, 0.4, 0.0], angle=[0.0, 90.0, 180.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
