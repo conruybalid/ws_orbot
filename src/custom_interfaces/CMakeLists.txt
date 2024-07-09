@@ -18,6 +18,7 @@ find_package(sensor_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/ImageProcess.srv"
   "srv/ImageRequest.srv"
+  "srv/GetLocation.srv"
   "action/PickApple.action"
   "msg/ArmControl.msg"
   "action/MoveArm.action"
