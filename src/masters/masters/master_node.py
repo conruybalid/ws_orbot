@@ -325,7 +325,7 @@ class MasterNode(Node):
 
             
             # Drop off apple
-            self.send_move_goal(self.format_move_goal(position=[0.0, 0.4, 0.6], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+            self.send_move_goal(self.format_move_goal(position=[0.0, 0.5, 0.5], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
 
             if not (
             self.send_move_goal(self.format_move_goal(position=[-0.3, 0.4, 0.0], angle=[0.0, 90.0, 180.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
