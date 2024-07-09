@@ -129,10 +129,16 @@ if len(contours) > 0:
 
     # Get the depth value at the center of the mask
     depth_value = depth.get_value(center_x, center_y)
+    x, y, z, something = point_cloud.get_value(center_x, center_y)[1]
 
-    # # Convert the center coordinates from pixels to meters
-    # x_distance = center_x * depth_value[1] / width
-    # y_distance = center_y * depth_value[1] /height
+    print(f'point cloud: {x}, {y}, {z}, {something}')
+
+    # # Convert the center coordinates to meters
+    x_distance = (-x + 402) / 1000
+    y_distance = (y + 420) / 1000
+
+    print(f'x_distance: {x_distance}, y_distance: {y_distance}')
+
    
     depth_value = depth_value[1] - 200 # Get the depth value in mm
     depth_value = depth_value/1000 # Convert the depth value to meters
