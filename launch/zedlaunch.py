@@ -16,8 +16,13 @@ def generate_launch_description():
             executable='masked_image_subscriber',
         ),
 
+        # Node(
+        #     package='get_pic',
+        #     executable='zed_distance_pub',
+        # ),
+
         Node(
-            package='get_pic',
-            executable='zed_distance_pub',
+            package='image_processing',
+            executable='zed_location_service',
         ),
     ])
