@@ -23,6 +23,11 @@ def generate_launch_description():
 
         Node(
             package='image_processing',
+            executable='rgb_image_service',
+        ),
+
+        Node(
+            package='image_processing',
             executable='zed_location_service',
         ),
     ])
