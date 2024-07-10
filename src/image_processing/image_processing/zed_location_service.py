@@ -94,9 +94,9 @@ class ZedPublisher(Node):
                     self.get_logger().info(f'point cloud: {x}, {y}, {z}, {something}')
 
                     # # Convert the center coordinates to meters
-                    x_distance = (-x + 402) / 1000
-                    y_distance = (y + 420) / 1000
-                    z_distance = (z - 200) / 1000
+                    x_distance = (-x + 509) / 1000
+                    y_distance = (-y + 840) / 1000
+                    z_distance = (z - 150) / 1000
 
                     self.get_logger().info(f'x_distance: {x_distance}, y_distance: {y_distance}, z_distance: {z_distance}')
 
