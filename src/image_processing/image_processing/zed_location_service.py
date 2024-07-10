@@ -6,8 +6,6 @@ from sensor_msgs.msg import Image
 
 import cv2
 from cv_bridge import CvBridge
-from get_pic.VideoQueue import VideoStreamHandler
-
 
 import pyzed.sl as sl
 
@@ -46,7 +44,6 @@ class ZedPublisher(Node):
             print("Error {}, exit program".format(err)) # Display the error
             
 
-            # Capture 50 images and depth, then stop
         
         self.image = sl.Mat()
         self.depth = sl.Mat()
@@ -81,6 +78,13 @@ class ZedPublisher(Node):
             # Find the contours of the red mask
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+            # Create Viewable Mask
+            viewing_mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
+            for contour in contours:
+                x, y, w, h = cv2.boundingRect(contour)        
+                viewing_mask = cv2.rectangle(viewing_mask, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
+
             # Find the center of the largest contour
             if len(contours) > 0:
                 largest_contour = max(contours, key=cv2.contourArea)
@@ -105,8 +109,10 @@ class ZedPublisher(Node):
                     response.apple_coordinates.x = x_distance
                     response.apple_coordinates.y = y_distance
                     response.apple_coordinates.z = z_distance
-            
-                    mask_msg = CvBridge().cv2_to_imgmsg(mask)
+
+                    x, y, w, h = cv2.boundingRect(largest_contour)        
+                    viewing_mask = cv2.rectangle(viewing_mask, (x, y), (x + w, y + h), (0, 0, 255), 2)
+                    mask_msg = CvBridge().cv2_to_imgmsg(viewing_mask)
                     self.maskpublisher.publish(mask_msg)
 
                     return response

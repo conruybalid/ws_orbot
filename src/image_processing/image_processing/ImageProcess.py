@@ -7,7 +7,7 @@ from geometry_msgs.msg import Point
 
 
 
-def processImage(image, imageNum):
+def processImage(image, imageNum=0):
     # Split the RGB channels of the image
     B, G, R = cv2.split(image)
 
@@ -87,16 +87,26 @@ def processImage(image, imageNum):
                 apple_largest = currentApple
                 apple_largest_num = i
 
+
         # Find and return the center of all apples
         apple_centroids = [(float(cv2.moments(contour)['m10'] / cv2.moments(contour)['m00']), float(cv2.moments(contour)['m01'] / cv2.moments(contour)['m00'])) for contour in contours]
 
-        # Draw rectangle around segmented apples
-        for contour in contours:
+        # Draw Blue rectangles around segmented apples
+        viewing_mask = cv2.multiply(redObjectsMask4, 255)
+        viewing_mask = cv2.cvtColor(viewing_mask, cv2.COLOR_GRAY2RGB)
+
+        for i, contour in enumerate(contours):
             x, y, w, h = cv2.boundingRect(contour)
-            cv2.rectangle(redObjectsMask4, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            if i == apple_largest_num:
+                viewing_mask = cv2.rectangle(viewing_mask, (x, y), (x + w, y + h), (0, 0, 255), 2)
+            else:
+                viewing_mask = cv2.rectangle(viewing_mask, (x, y), (x + w, y + h), (255, 0, 0), 2)
+        
+    else:
+        apple_centroids = None
 
     # Display the image
-    # cv2.imshow('Apples', cv2.multiply(redObjectsMask4,255))
+    # cv2.imshow('Apples', viewing_mask)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
 
@@ -107,18 +117,19 @@ def processImage(image, imageNum):
     num_apples = len(contours)
     # Create a list of geometry msg points
     apple_points = []
-    for centroid in apple_centroids:
-        point = Point()
-        point.x = centroid[0]
-        point.y = centroid[1]
-        point.z = 0.0
-        apple_points.append(point)
+    if not apple_centroids is None:
+        for centroid in apple_centroids:
+            point = Point()
+            point.x = centroid[0]
+            point.y = centroid[1]
+            point.z = 0.0
+            apple_points.append(point)
 
-    return num_apples, apple_points
+    return apple_largest_num, apple_points, viewing_mask
 
 
 if __name__ == "__main__":
-    image_path = os.path.expanduser('~/apple2.JPG')  # Replace with your image path
+    image_path = os.path.expanduser('~/ws_orbot/apple2.JPG')  # Replace with your image path
     cv_bridge = CvBridge()
     image = cv2.imread(image_path)
     processImage(image, 1)

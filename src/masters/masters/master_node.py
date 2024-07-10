@@ -45,7 +45,7 @@ class MasterNode(Node):
             depth_msg (Image): The latest depth message received.
             distance_msg (Float32): The latest distance message received.
     """
-    def __init__(self):
+    def __init__(self, mode = 'ZED'):
         """
         Init fuction for the MasterNode class.
         calls the init function of the parent class (Node) and initializes the subscriptions, publishers and action clients.
@@ -54,9 +54,15 @@ class MasterNode(Node):
         super().__init__('Master_Node')
         self.image_sub = self.create_subscription(Image, 'image_topic', self.image_callback, 10)
         self.depth_sub = self.create_subscription(Image, 'depth_topic', self.depth_callback, 10)
+        
         self.zed_client = self.create_client(GetLocation, 'zed_location_service')
         while not self.zed_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('zed_location_service not available, waiting again...')
+
+        self.arm_client = self.create_client(GetLocation, 'Arm_Locate_Apple_Service')
+        while not self.arm_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Arm_Locate_Apple_Service not available, waiting again...')
+        
         self.distance_sub = self.create_subscription(Float32, 'zed_distance_topic', self.distance_callback, 10)
         self.image_msg = None
         self.depth_msg = None
@@ -113,6 +119,20 @@ class MasterNode(Node):
         response = future.result()
         return response
     
+
+    """
+    Arm Location Service Call
+    """
+    def call_arm_service(self):
+        """
+        Calls the arm location service to get the location of the apple in the image.
+        """
+        request = GetLocation.Request()
+
+        future = self.arm_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response = future.result()
+        return response
     
 
     """
@@ -265,26 +285,16 @@ class MasterNode(Node):
 
             move_msg = ArmControl()
 
-            image = CvBridge().imgmsg_to_cv2(self.image_msg)
+            apple_coordinates = self.call_arm_service().apple_coordinates
 
-            num_apples, apple_coordinates, maskedImage = processImage(image)
-            self.get_logger().info('found %.d apples' % num_apples)
-
-            for apple in apple_coordinates:
-                self.get_logger().info('Location: %.2f, %.2f' % (apple.x, apple.y))
-
-            mask_msg = CvBridge().cv2_to_imgmsg(cv2.multiply(maskedImage,255))
-            self.Masked_publisher.publish(mask_msg)
-
-            if num_apples == 0:
+            if apple_coordinates.z == 99.0:
                 self.get_logger().info('No apples found')
 
                 return False
 
 
             # scale the coordinates and create message
-            move_msg.position.z = 0.0
-            move_msg.position.x, move_msg.position.y = self.pixel_scale(apple_coordinates[0].x, apple_coordinates[0].y)
+            move_msg.position = apple_coordinates
             move_msg.angle.x = 0.0
             move_msg.angle.y = 0.0
             move_msg.angle.z = 0.0        
@@ -300,21 +310,6 @@ class MasterNode(Node):
             self.get_logger().info(f'moved {move_msg.position.x} in x, {move_msg.position.y} in y')
         
         return True
-    
-    
-    def pixel_scale(self, x, y):
-        """
-        Transforms pixel coordinates to relative arm movement coordinates.
-        """
-        xDesire = 640; 
-        xDist = xDesire - x
-        xChange = 0.00025*xDist
-
-        yDesire = 420; #was 420
-        yDist = yDesire - y
-        yChange = 0.00025*yDist
-
-        return xChange, yChange
     
 
     

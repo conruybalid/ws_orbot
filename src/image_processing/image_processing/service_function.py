@@ -1,7 +1,8 @@
 import rclpy
 from rclpy.node import Node
 
-from custom_interfaces.srv import ImageProcess
+from custom_interfaces.srv import GetLocation
+from sensor_msgs.msg import Image
 
 from cv_bridge import CvBridge
 #from ImageProcess import processImage
@@ -9,28 +10,64 @@ from image_processing.ImageProcess import processImage
 
 class ImageProcessingService(Node):
     def __init__(self):
-        super().__init__('red_mask')
-        self.service = self.create_service(ImageProcess, 'rgb_image_processing', self.process_image_callback)
-        self.imageNum = 0
+        super().__init__('Arm_Locate_Apple_Service')
+        self.locate_apple_service = self.create_service(GetLocation, 'Arm_Locate_Apple_Service', self.process_image_callback)
+        self.arm_rgb_sub = self.create_subscription(Image, 'image_topic', self.image_callback, 10)
+        self.Masked_publisher = self.create_publisher(Image, 'masked_image_topic', 10)
+
+        self.rgb_image = None
+
+    def image_callback(self, msg):
+        self.rgb_image = CvBridge().imgmsg_to_cv2(msg)
+        #self.get_logger().info('Image received')
 
     def process_image_callback(self, request, response):
-        # Process the image here
-        image_msg = request.image
-        self.get_logger().info('Incoming image request')
-        # Image processing logic goes here
-        image = CvBridge().imgmsg_to_cv2(image_msg)
+        failed_response = GetLocation.Response()
+        failed_response.apple_coordinates.x = 99.0
+        failed_response.apple_coordinates.y = 99.0
+        failed_response.apple_coordinates.z = 99.0
 
-        # try:
-        response.num_apples, response.apple_coordinates = processImage(image, self.imageNum)
-        self.get_logger().info('image processed successfully')
-        self.imageNum += 1
+        self.get_logger().info('Incoming Process request')
+        
+        if self.rgb_image is not None:
+            #try:
+            largest_apple_index, apple_coordinates, mask_image = processImage(self.rgb_image)
+            self.get_logger().info('image processed successfully')
+            self.Masked_publisher.publish(CvBridge().cv2_to_imgmsg(mask_image))
+            for coordinate in apple_coordinates:
+                coordinate.x, coordinate.y = self.pixel_scale(coordinate.x, coordinate.y)
+            if len(apple_coordinates) > 0:
+                response.apple_coordinates = apple_coordinates[largest_apple_index]
+            else:
+                response = failed_response
+            self.rgb_image = None
+            return response
+
+            # except:
+            #     self.get_logger().info('image processing failed')
+            #     self.rgb_image = None
+        else:
+            self.get_logger().info('no image available for processing')
+
+        num_apples = -1
+        response = failed_response
         return response
+    
+    
+    def pixel_scale(self, x, y):
+        """
+        Transforms pixel coordinates to relative arm movement coordinates.
+        """
+        xDesire = 640; 
+        xDist = xDesire - x
+        xChange = 0.00025*xDist
 
-        # except:
-        #     self.get_logger().info('image processing failed')
-        #     response.num_apples = -1
-        #     response.region_coordinates = [-1.0, -1.0]
-        #     return response
+        yDesire = 420; #was 420
+        yDist = yDesire - y
+        yChange = 0.00025*yDist
+
+        return xChange, yChange
+    
             
 
 def main(args=None):

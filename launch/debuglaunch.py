@@ -12,9 +12,13 @@ def generate_launch_description():
             executable='video_subscriber',
         ),
         Node(
-            package='get_pic',
-            executable='masked_image_subscriber',
+            package='image_processing',
+            executable='rgb_image_service',
         ),
+        # Node(
+        #     package='get_pic',
+        #     executable='masked_image_subscriber',
+        # ),
 
         # Node(
         #     package='pick_apple',
