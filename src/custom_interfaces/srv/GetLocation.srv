@@ -1,3 +1,4 @@
 # ImageRequest.srv
 ---
+uint8 error_status  # 0: success, 1: no apple found, 2: Processing Error, 3: No Image
 geometry_msgs/Point apple_coordinates

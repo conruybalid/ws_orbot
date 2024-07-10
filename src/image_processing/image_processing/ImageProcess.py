@@ -71,39 +71,40 @@ def processImage(image, imageNum=0):
     # Save RedObjectsMask4 Image
     cv2.imwrite(f'~/images/RedObjectsMask4_{imageNum}.png', redObjectsMask4 * 255)
 
+    
+    # Create a version of the last mask that can be viewed
+    viewing_mask = cv2.multiply(redObjectsMask4, 255)
+    viewing_mask = cv2.cvtColor(viewing_mask, cv2.COLOR_GRAY2RGB)
+
     # Assuming redObjectsMask4 is a binary image
     # Find all contours in the binary image
     contours, _ = cv2.findContours(redObjectsMask4, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # If there are apples within the field of view
     if len(contours) != 0:
-        # Initialize the largest apple to a value
-        apple_largest = 0
 
-        # This loop looks at all the apples and labels the largest one
-        for i, contour in enumerate(contours):
-            currentApple = cv2.contourArea(contour)
-            if currentApple > apple_largest:
-                apple_largest = currentApple
-                apple_largest_num = i
-
+        # Get the largest contour
+        largest_contour = max(contours, key=cv2.contourArea)
+        
+        # Get the index of the largest contour
+        largest_contour_index = contours.index(largest_contour)
 
         # Find and return the center of all apples
         apple_centroids = [(float(cv2.moments(contour)['m10'] / cv2.moments(contour)['m00']), float(cv2.moments(contour)['m01'] / cv2.moments(contour)['m00'])) for contour in contours]
 
-        # Draw Blue rectangles around segmented apples
-        viewing_mask = cv2.multiply(redObjectsMask4, 255)
-        viewing_mask = cv2.cvtColor(viewing_mask, cv2.COLOR_GRAY2RGB)
-
-        for i, contour in enumerate(contours):
+        # Draw Blue Box around all apples
+        for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
-            if i == apple_largest_num:
-                viewing_mask = cv2.rectangle(viewing_mask, (x, y), (x + w, y + h), (0, 0, 255), 2)
-            else:
-                viewing_mask = cv2.rectangle(viewing_mask, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            viewing_mask = cv2.rectangle(viewing_mask, (x, y), (x + w, y + h), (255, 0, 0), 2)
+        
+        # Draw Red Box around biggest apple
+        x, y, w, h = cv2.boundingRect(largest_contour)
+        viewing_mask = cv2.rectangle(viewing_mask, (x, y), (x + w, y + h), (0, 0, 255), 2)
+        
         
     else:
         apple_centroids = None
+        largest_contour_index = None
 
     # Display the image
     # cv2.imshow('Apples', viewing_mask)
@@ -125,7 +126,7 @@ def processImage(image, imageNum=0):
             point.z = 0.0
             apple_points.append(point)
 
-    return apple_largest_num, apple_points, viewing_mask
+    return largest_contour_index, apple_points, viewing_mask
 
 
 if __name__ == "__main__":

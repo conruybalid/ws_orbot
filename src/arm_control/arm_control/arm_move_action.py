@@ -88,14 +88,7 @@ class MoveArmServer(Node):
         goal = goal_handle.request.goal
         feedback = MoveArm.Feedback()
         result = MoveArm.Result()
-
-        # Publish feedback periodically
-        # # Update feedback values
-        # feedback.feedback = "Beginning movement..."
-        # # Publish feedback
-        # goal_handle.publish_feedback(feedback)
-
-        #with utilities.DeviceConnection.createTcpConnection(self.args) as router:
+        
         point = goal.position
         gripper_state = goal.gripper_state
     

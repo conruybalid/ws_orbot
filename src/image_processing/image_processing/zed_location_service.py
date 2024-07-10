@@ -127,6 +127,7 @@ class ZedPublisher(Node):
                 response.apple_coordinates.x = 0.0
                 response.apple_coordinates.y = 0.0
                 response.apple_coordinates.z = 0.0
+                response.error_status = 1
 
             mask_msg = CvBridge().cv2_to_imgmsg(mask)
             self.maskpublisher.publish(mask_msg)
@@ -136,6 +137,7 @@ class ZedPublisher(Node):
             response.apple_coordinates.x = 0.0
             response.apple_coordinates.y = 0.0
             response.apple_coordinates.z = 0.0
+            response.error_status = 3
 
 
 

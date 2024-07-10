@@ -172,7 +172,7 @@ class MasterNode(Node):
             self.get_logger().info('Move Goal rejected :(')
             return False
 
-        self.get_logger().info('Move Goal accepted :)')
+        self.get_logger().info(f'Move Goal sent: \n{goal_msg}')
 
         result_future = goal_handle.get_result_async()
         #result_future.add_done_callback(self.get_result_callback)

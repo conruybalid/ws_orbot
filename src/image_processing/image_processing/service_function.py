@@ -23,36 +23,43 @@ class ImageProcessingService(Node):
         #self.get_logger().info('Image received')
 
     def process_image_callback(self, request, response):
-        failed_response = GetLocation.Response()
-        failed_response.apple_coordinates.x = 99.0
-        failed_response.apple_coordinates.y = 99.0
-        failed_response.apple_coordinates.z = 99.0
+        failed_coordinates = GetLocation.Response().apple_coordinates
+        failed_coordinates.x = 99.0
+        failed_coordinates.y = 99.0
+        failed_coordinates.z = 99.0
 
         self.get_logger().info('Incoming Process request')
         
         if self.rgb_image is not None:
-            #try:
-            largest_apple_index, apple_coordinates, mask_image = processImage(self.rgb_image)
-            self.get_logger().info('image processed successfully')
-            mask_msg = CvBridge().cv2_to_imgmsg(mask_image)
-            self.Masked_publisher.publish(mask_msg)
-            for coordinate in apple_coordinates:
-                coordinate.x, coordinate.y = self.pixel_scale(coordinate.x, coordinate.y)
-            if len(apple_coordinates) > 0:
-                response.apple_coordinates = apple_coordinates[largest_apple_index]
-            else:
-                response = failed_response
-            self.rgb_image = None
-            return response
+            try:
+                largest_apple_index, apple_coordinates, mask_image = processImage(self.rgb_image)
+                self.get_logger().info('image processed successfully')
+                mask_msg = CvBridge().cv2_to_imgmsg(mask_image)
+                self.Masked_publisher.publish(mask_msg)
+                for coordinate in apple_coordinates:
+                    coordinate.x, coordinate.y = self.pixel_scale(coordinate.x, coordinate.y)
+                if apple_coordinates is not None and len(apple_coordinates) > 0:
+                    response.apple_coordinates = apple_coordinates[largest_apple_index]
+                    response.error_status = 0
+                else:
+                    response.apple_coordinates = failed_coordinates
+                    response.error_status = 1
 
-            # except:
-            #     self.get_logger().info('image processing failed')
-            #     self.rgb_image = None
+                self.rgb_image = None
+                return response
+
+            except Exception as e:
+                self.get_logger().info('image processing failed: {}'.format(str(e)))
+                response.error_status = 2
+                self.rgb_image = None
+
         else:
             self.get_logger().info('no image available for processing')
+            response.error_status = 3
 
         num_apples = -1
-        response = failed_response
+        response.apple_coordinates = failed_coordinates
+
         return response
     
     

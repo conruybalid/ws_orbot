@@ -46,9 +46,9 @@ class VideoSubscriber(Node):
         self.bridge = CvBridge()
 
         # Create a black image
-        screen = get_monitors()[0]
-        width = int(screen.width / 2.5)
-        height = int(screen.height / 2.5)
+        self.screen = get_monitors()[0]
+        width = int(self.screen.width / 2.5)
+        height = int(self.screen.height / 2.5)
         black_image = np.zeros((height, width, 3), dtype=np.uint8)
 
         # Define the border color and thickness
@@ -100,20 +100,23 @@ class VideoSubscriber(Node):
         # cv2.waitKey(1)
 
     def Resize_to_screen(self, image):
-        screen = get_monitors()[0]
-        width = int(screen.width / 2.5)
-        height = int(screen.height / 2.5)
+        width = int(self.screen.width / 2.5)
+        height = int(self.screen.height / 2.5)
         return cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
     
     def display_images(self):
-        if len(get_monitors()) == 0:
-            self.get_logger().warn('No monitor detected')
+        try:
+            get_monitors()
+        except:
+            self.get_logger().info('No monitor detected')
             return
         top_image = np.hstack((self.images[0], self.images[1]))
         bottom_image = np.hstack((self.images[2], self.images[3]))
         combined_image = np.vstack((top_image, bottom_image))
         cv2.imshow('Combined Image', combined_image)
         cv2.waitKey(1)
+        
+        return
         
 
 def main(args=None):
