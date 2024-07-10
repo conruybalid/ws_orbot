@@ -11,10 +11,10 @@ def generate_launch_description():
             package='get_pic',
             executable='video_subscriber',
         ),
-        Node(
-            package='get_pic',
-            executable='masked_image_subscriber',
-        ),
+        # Node(
+        #     package='get_pic',
+        #     executable='masked_image_subscriber',
+        # ),
 
         # Node(
         #     package='get_pic',

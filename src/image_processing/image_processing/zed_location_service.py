@@ -111,10 +111,10 @@ class ZedPublisher(Node):
 
                     return response
                 else:
-                    print("No red mask found. (Too Small)")
+                    self.get_logger().log("No red mask found. (Too Small)")
 
             else:
-                print("No red mask found.")
+                self.get_logger().log("No red mask found.")
 
         response.apple_coordinates.x = 0.0
         response.apple_coordinates.y = 0.0
