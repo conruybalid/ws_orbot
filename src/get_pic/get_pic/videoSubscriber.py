@@ -99,6 +99,9 @@ class VideoSubscriber(Node):
         return cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
     
     def display_images(self):
+        if len(get_monitors()) == 0:
+            self.get_logger().warn('No monitor detected')
+            return
         top_image = np.hstack((self.images[0], self.images[1]))
         bottom_image = np.hstack((self.images[2], self.images[3]))
         combined_image = np.vstack((top_image, bottom_image))

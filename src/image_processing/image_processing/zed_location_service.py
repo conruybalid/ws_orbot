@@ -112,13 +112,26 @@ class ZedPublisher(Node):
                     return response
                 else:
                     self.get_logger().info("No red mask found. (Too Small)")
+                    response.apple_coordinates.x = 0.0
+                    response.apple_coordinates.y = 0.0
+                    response.apple_coordinates.z = 0.0
 
             else:
                 self.get_logger().info("No red mask found.")
+                response.apple_coordinates.x = 0.0
+                response.apple_coordinates.y = 0.0
+                response.apple_coordinates.z = 0.0
 
-        response.apple_coordinates.x = 0.0
-        response.apple_coordinates.y = 0.0
-        response.apple_coordinates.z = 0.0
+            mask_msg = CvBridge().cv2_to_imgmsg(mask)
+            self.maskpublisher.publish(mask_msg)
+
+        else:
+            self.get_logger().info("Could not access the camera.")
+            response.apple_coordinates.x = 0.0
+            response.apple_coordinates.y = 0.0
+            response.apple_coordinates.z = 0.0
+
+
 
 
         return response
