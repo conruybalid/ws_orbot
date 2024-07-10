@@ -117,7 +117,7 @@ class MasterNode(Node):
         future = self.zed_client.call_async(request)
         rclpy.spin_until_future_complete(self, future)
         response = future.result()
-        return response
+        return response.error_status, response.apple_coordinates
     
 
     """
@@ -132,7 +132,21 @@ class MasterNode(Node):
         future = self.arm_client.call_async(request)
         rclpy.spin_until_future_complete(self, future)
         response = future.result()
-        return response
+        return response.error_status, response.apple_coordinates
+    
+    def process_service_error(self, error_code):
+        """
+        Processes the error code received from either camera service.
+        """
+        if error_code == 1:
+            self.get_logger().info('No apples found')
+        elif error_code == 2:
+            self.get_logger().info('Failed to process image')
+        elif error_code == 3:
+            self.get_logger().info('Service Node Failed to access camera')
+        else:
+            self.get_logger().info('Unknown Error Code')
+        return
     
 
     """
@@ -251,16 +265,17 @@ class MasterNode(Node):
 
     def Go_to_Apple(self):
         self.get_logger().info('Asking Camera for Apple Location')
-        point = self.call_zed_service().apple_coordinates
+        error_status, point = self.call_zed_service().apple_coordinates
+        
+        if error_status != 0:
+            self.process_service_error(error_status)
+            return False
+        
         x = point.x
         y = point.y
         self.distance = point.z 
-
-        if (x == 0.0 and y == 0.0 and self.distance == 0.0):
-            self.get_logger().info('No apple found')
-            return False
-        else:
-            self.get_logger().info(f'Apple at {x}, {y}, {self.distance}')
+        
+        self.get_logger().info(f'Apple at {x}, {y}, {self.distance}')
 
         #Adjust coordinates so that the camera can see the apple
         if (self.send_move_goal(self.format_move_goal(position=[x, y - 0.025, self.distance - 0.2], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))):
@@ -285,11 +300,10 @@ class MasterNode(Node):
 
             move_msg = ArmControl()
 
-            apple_coordinates = self.call_arm_service().apple_coordinates
+            error_status, apple_coordinates = self.call_arm_service().apple_coordinates
 
-            if apple_coordinates.z == 99.0:
-                self.get_logger().info('No apples found')
-
+            if error_status != 0:
+                self.process_service_error(error_status)
                 return False
 
 
