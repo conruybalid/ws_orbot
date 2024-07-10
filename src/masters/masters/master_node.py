@@ -258,8 +258,9 @@ class MasterNode(Node):
         It will continue until the apple is within a certain range of the center of the frame and return True.
         If sight of the apple is lost, the function will return False.
         """
+        tolerance = 15
         apple_coordinates = None
-        while (apple_coordinates == None or not ((apple_coordinates[0].x <= 650 and apple_coordinates[0].x >= 630) and (apple_coordinates[0].y <= 430 and apple_coordinates[0].y >= 410))):
+        while (apple_coordinates == None or not ((apple_coordinates[0].x <= 640+tolerance and apple_coordinates[0].x >= 640-tolerance) and (apple_coordinates[0].y <= 420+tolerance and apple_coordinates[0].y >= 420-tolerance))):
             rclpy.spin_once(self)
 
             move_msg = ArmControl()
@@ -400,33 +401,38 @@ class MasterNode(Node):
 
     def run(self):
         self.get_logger().info('Master Node Routine Started')
+        try:
+            while True:
+                while (self.image_msg is None):
+                    self.get_logger().info('Waiting for images')
+                    rclpy.spin_once(self)
+
+                if not self.Go_to_Apple():
+                    break
+
+                # Center the apple
+                self.get_logger().info('Centering Apple')
+                if not self.center_apple():
+                    break
+                
+                # Reach for the Apple
+                if self.distance is not None:
+                    if self.reach_apple():
+                        # Grab the Apple
+                        self.grab_apple()
+
+
+                else:
+                    self.get_logger().info('No depth found \nPerfroming placeholder "reach for apple"')
+                    self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, 0.2]))
+                    # Grab the Apple
+                    self.grab_apple()
+
+        except KeyboardInterrupt:
+            self.get_logger().info('Routine Aborted')
         
-        while (self.image_msg is None):
-            self.get_logger().info('Waiting for images')
-            rclpy.spin_once(self)
+        self.send_move_goal(self.format_move_goal(position=[0.0, 0.5, 0.5], angle=[0.0, 90.0, 90.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
 
-        if not self.Go_to_Apple():
-            return
-
-        # Center the apple
-        self.get_logger().info('Centering Apple')
-        if not self.center_apple():
-            return
-        
-        # Reach for the Apple
-        if self.distance is not None:
-            if self.reach_apple():
-                # Grab the Apple
-                self.grab_apple()
-
-
-        else:
-            self.get_logger().info('No depth found \nPerfroming placeholder "reach for apple"')
-            self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, 0.2]))
-            # Grab the Apple
-            self.grab_apple()
-
-        
     
         return
     

@@ -96,7 +96,7 @@ class ZedPublisher(Node):
                     # # Convert the center coordinates to meters
                     x_distance = (-x + 509) / 1000
                     y_distance = (-y + 840) / 1000
-                    z_distance = (z - 150) / 1000
+                    z_distance = (z - 175) / 1000
 
                     self.get_logger().info(f'x_distance: {x_distance}, y_distance: {y_distance}, z_distance: {z_distance}')
 
@@ -111,10 +111,10 @@ class ZedPublisher(Node):
 
                     return response
                 else:
-                    self.get_logger().log("No red mask found. (Too Small)")
+                    self.get_logger().info("No red mask found. (Too Small)")
 
             else:
-                self.get_logger().log("No red mask found.")
+                self.get_logger().info("No red mask found.")
 
         response.apple_coordinates.x = 0.0
         response.apple_coordinates.y = 0.0
