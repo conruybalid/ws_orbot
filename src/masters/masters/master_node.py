@@ -278,9 +278,9 @@ class MasterNode(Node):
         It will continue until the apple is within a certain range of the center of the frame and return True.
         If sight of the apple is lost, the function will return False.
         """
-        tolerance = 15
+        tolerance = 0.02
         apple_coordinates = None
-        while (apple_coordinates == None or not ((apple_coordinates[0].x <= 640+tolerance and apple_coordinates[0].x >= 640-tolerance) and (apple_coordinates[0].y <= 420+tolerance and apple_coordinates[0].y >= 420-tolerance))):
+        while (apple_coordinates == None or not ((apple_coordinates.x <= tolerance and apple_coordinates.x >= -tolerance) and (apple_coordinates.y <= tolerance and apple_coordinates.y >= -tolerance))):
             rclpy.spin_once(self)
 
             move_msg = ArmControl()
