@@ -3,6 +3,8 @@ from rclpy.node import Node
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import PointCloud2
 #import point_cloud2_methods as pc2
+import open3d as o3d
+
 
 import cv2
 from cv_bridge import CvBridge
@@ -41,33 +43,42 @@ class VideoSubscriber(Node):
     def image_callback(self, msg):
         self.get_logger().info('Received a color image')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
-        cv2.imshow('Color_Image', cv_image)
-        cv2.waitKey(1)
+        # cv2.imshow('Color_Image', cv_image)
+        # cv2.waitKey(1)
 
     def depth_callback(self, msg):
         self.get_logger().info('Received a depth image')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
         cv_image = cv2.multiply(cv_image,255)
-        cv2.imshow('Depth_Image', cv_image)
-        cv2.waitKey(1)
+        # cv2.imshow('Depth_Image', cv_image)
+        # cv2.waitKey(1)
 
     def pointcloud_callback(self, msg: PointCloud2):
         self.get_logger().info('Received a pointcloud')
 
-        # # Convert PointCloud2 to array of points
-        # points_list = list(pc2.read_points(msg, skip_nans=True, field_names=("x", "y", "z")))
+        # Convert PointCloud2 to array of points
+        np_points = self.ros_point_cloud2_to_zed_point_cloud(msg)
 
-        # # Convert to numpy array for Open3D
-        # np_points = np.array(points_list)
-
-        # # Create Open3D point cloud
-        # pc_o3d = o3d.geometry.PointCloud()
-        # pc_o3d.points = o3d.utility.Vector3dVector(np_points)
-
-        # # Visualize
-        # o3d.visualization.draw_geometries([pc_o3d])
+        print(np_points[100][100])
 
 
+    def ros_point_cloud2_to_zed_point_cloud(self, ros_point_cloud):
+        # Assuming ros_point_cloud is a PointCloud2 message
+        # Extract fields and data from the PointCloud2 message
+        height, width = ros_point_cloud.height, ros_point_cloud.width
+        point_step = ros_point_cloud.point_step
+        row_step = ros_point_cloud.row_step
+        data = ros_point_cloud.data
+
+        # Convert data to a NumPy array of bytes, then to float32
+        data_np = np.frombuffer(bytearray(data), dtype=np.float32)
+
+        # Reshape the array to have the correct dimensions: (height, width, 3)
+        points_array = np.reshape(data_np, (height, width, 3))
+
+
+
+        return points_array
 
 def main(args=None):
     rclpy.init(args=args)

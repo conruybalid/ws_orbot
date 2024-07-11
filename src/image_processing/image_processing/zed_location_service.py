@@ -3,6 +3,8 @@ from rclpy.node import Node
 
 from custom_interfaces.srv import GetLocation
 from sensor_msgs.msg import Image
+from sensor_msgs.msg import PointCloud2
+
 
 import cv2
 from cv_bridge import CvBridge
@@ -16,57 +18,48 @@ class ZedPublisher(Node):
     def __init__(self):
         super().__init__('zed_location_service_node')
         self.distancepublisher_ = self.create_service(GetLocation, 'zed_location_service', self.process_image_callback)
+        self.zed_rgb_sub = self.create_subscription(Image, 'zed_image_topic', self.zed_image_callback, 10)
+        self.zed_image = None
+        self.zed_pc_sub = self.create_subscription(PointCloud2, 'zed_pointcloud_topic', self.zed_pointcloud_callback, 10)
+        self.zed_pointcloud = None
         self.maskpublisher = self.create_publisher(Image, 'zed_mask_topic', 10)
         self.get_logger().info('Distance publisher node has been initialized')
-
-
-        init = sl.InitParameters(depth_mode=sl.DEPTH_MODE.ULTRA,
-                                 coordinate_units=sl.UNIT.MILLIMETER,
-                                 coordinate_system=sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP)
-
-        self.zed = sl.Camera()
-        status = self.zed.open(init)
-        if status != sl.ERROR_CODE.SUCCESS:
-            print(repr(status))
-            
-
-
-        # Create a ZED camera
-        self.zed = sl.Camera()
-        init_params = sl.InitParameters()
-        init_params.sdk_verbose = 1 # Enable verbose logging
-        init_params.depth_mode = sl.DEPTH_MODE.PERFORMANCE # Set the depth mode to performance (fastest)
-        init_params.coordinate_units = sl.UNIT.MILLIMETER  # Use meter units
-
-        # Open the camera
-        err = self.zed.open(init_params)
-        if err != sl.ERROR_CODE.SUCCESS:
-            print("Error {}, exit program".format(err)) # Display the error
-            
-
-        
-        self.image = sl.Mat()
-        self.depth = sl.Mat()
-        self.point_cloud = sl.Mat()
-        self.runtime_parameters = sl.RuntimeParameters()
         
 
 
-        
+    def zed_image_callback(self, msg):
+        self.zed_image = CvBridge().imgmsg_to_cv2(msg)
+        self.get_logger().info('ZED Image received')
+
+    def zed_pointcloud_callback(self, msg):
+        self.get_logger().info('ZED Point Cloud received')
+        self.zed_pointcloud = self.ros_point_cloud2_to_zed_point_cloud(msg)
+
+    def ros_point_cloud2_to_zed_point_cloud(self, ros_point_cloud):
+        # Assuming ros_point_cloud is a PointCloud2 message
+        # Extract fields and data from the PointCloud2 message
+        height, width = ros_point_cloud.height, ros_point_cloud.width
+        point_step = ros_point_cloud.point_step
+        row_step = ros_point_cloud.row_step
+        data = ros_point_cloud.data
+
+        # Convert data to a NumPy array of bytes, then to float32
+        data_np = np.frombuffer(bytearray(data), dtype=np.float32)
+
+        # Reshape the array to have the correct dimensions: (height, width, 3)
+        points_array = np.reshape(data_np, (height, width, 3))
+
+        return points_array
+
 
 
 
     def process_image_callback(self,  request, response):
         # Grab an image
-        if self.zed.grab(self.runtime_parameters) == sl.ERROR_CODE.SUCCESS:
-            # A new image is available if grab() returns sl.ERROR_CODE.SUCCESS
-
-            # Retrieve the image, depth, and point cloud
-            self.zed.retrieve_image(self.image, sl.VIEW.LEFT) # Get the left image
-            self.zed.retrieve_measure(self.point_cloud, sl.MEASURE.XYZRGBA) # Retrieve colored point cloud
-
+        if self.zed_image is not None and self.zed_pointcloud is not None:
+            
             # Convert the image to HSV color space
-            hsv_image = cv2.cvtColor(self.image.get_data(), cv2.COLOR_BGR2HSV)
+            hsv_image = cv2.cvtColor(self.zed_image, cv2.COLOR_BGR2HSV)
 
             # Define the lower and upper bounds for the red color in HSV
             lower_red = np.array([0, 100, 100])
@@ -93,9 +86,9 @@ class ZedPublisher(Node):
                     center_x = int(M["m10"] / M["m00"])
                     center_y = int(M["m01"] / M["m00"])
 
-                    x, y, z, something = self.point_cloud.get_value(center_x, center_y)[1]
+                    x, y, z = self.zed_pointcloud[center_y, center_x]
 
-                    self.get_logger().info(f'point cloud: {x}, {y}, {z}, {something}')
+                    self.get_logger().info(f'point cloud: {x}, {y}, {z}')
 
                     # # Convert the center coordinates to meters
                     x_distance = (-x + 509) / 1000

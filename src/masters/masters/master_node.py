@@ -265,7 +265,7 @@ class MasterNode(Node):
 
     def Go_to_Apple(self):
         self.get_logger().info('Asking Camera for Apple Location')
-        error_status, point = self.call_zed_service().apple_coordinates
+        error_status, point = self.call_zed_service()
         
         if error_status != 0:
             self.process_service_error(error_status)
@@ -300,7 +300,7 @@ class MasterNode(Node):
 
             move_msg = ArmControl()
 
-            error_status, apple_coordinates = self.call_arm_service().apple_coordinates
+            error_status, apple_coordinates = self.call_arm_service()
 
             if error_status != 0:
                 self.process_service_error(error_status)

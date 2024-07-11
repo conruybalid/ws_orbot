@@ -33,7 +33,15 @@ class VideoSubscriber(Node):
         )
         self.arm_mask_image = None
 
-        self.zed_subscription = self.create_subscription(
+        self.zed_image_subscription = self.create_subscription(
+            Image,
+            'zed_image_topic',
+            self.zed_image_callback,
+            10
+        )
+        self.zed_image = None
+
+        self.zed_mask_subscription = self.create_subscription(
             Image,
             'zed_mask_topic',
             self.zed_mask_callback,
@@ -88,14 +96,25 @@ class VideoSubscriber(Node):
         # cv2.imshow('Masked_Image', cv_image)
         # cv2.waitKey(1)
 
+    def zed_image_callback(self, msg):
+        #self.get_logger().info('Received a zed image')
+        cv_image = self.bridge.imgmsg_to_cv2(msg)
+        cv_image = self.Resize_to_screen(cv_image)
+        if cv_image.shape[2] > 3:
+            self.images[2] = cv_image[:, :, :3]
+        else:
+            self.images[2] = cv_image
+        # cv2.imshow('Zed_Image', cv_image)
+        # cv2.waitKey(1)
+
     def zed_mask_callback(self, msg):
         #self.get_logger().info('Received a zed mask')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
         cv_image = self.Resize_to_screen(cv_image)
         if len(cv_image.shape) < 3:
-            self.images[2] = cv2.cvtColor(cv_image, cv2.COLOR_GRAY2RGB)
+            self.images[3] = cv2.cvtColor(cv_image, cv2.COLOR_GRAY2RGB)
         else:
-            self.images[2] = cv_image 
+            self.images[3] = cv_image 
         # cv2.imshow('Masked_Zed_Image', cv_image)
         # cv2.waitKey(1)
 

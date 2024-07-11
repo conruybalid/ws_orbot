@@ -51,6 +51,8 @@ class ZedPublisher(Node):
         self.image = sl.Mat()
         self.depth = sl.Mat()
         self.point_cloud = sl.Mat()
+        self.runtime_parameters = sl.RuntimeParameters()
+
 
 
         
@@ -85,6 +87,9 @@ class ZedPublisher(Node):
 
             # point cloud    
             if self.point_cloud is not None:
+                # print point cloud data at 100, 100
+                print(self.point_cloud.get_value(100, 100))
+
                 point_cloud_msg = self.zed_point_cloud_to_ros_point_cloud2(self.point_cloud)
                 self.pointcloutpublisher_.publish(point_cloud_msg)
                 self.get_logger().info('point cloud published')
@@ -100,13 +105,13 @@ class ZedPublisher(Node):
         bridge = CvBridge()
         ros_image_msg = None
         if image_np.dtype == np.uint8:
-            cv2.imshow('color source',image_np)
-            cv2.waitKey(1)
+            # cv2.imshow('color source',image_np)
+            # cv2.waitKey(1)
             ros_image_msg = bridge.cv2_to_imgmsg(image_np, "8UC4")
         elif image_np.dtype == np.float32:
-            depth_np = np.nan_to_num(depth_np, nan=0.0, posinf=2450.0)
-            cv2.imshow('depth source',depth_np)
-            cv2.waitKey(1)
+            image_np = np.nan_to_num(image_np, nan=0.0, posinf=2450.0)
+            # cv2.imshow('depth source',image_np)
+            # cv2.waitKey(1)
             ros_image_msg = bridge.cv2_to_imgmsg(image_np, "32FC1")
         else:
             self.get_logger().info('Invalid image data type')
@@ -144,8 +149,8 @@ class ZedPublisher(Node):
         ros_point_cloud.row_step = ros_point_cloud.point_step * flat_pc.shape[0]
 
         # Set the height and width of the point cloud
-        ros_point_cloud.height = 1  # Unordered point cloud
-        ros_point_cloud.width = len(flat_pc)
+        ros_point_cloud.height = zed_point_cloud.get_height()  # Unordered point cloud
+        ros_point_cloud.width = zed_point_cloud.get_width()
 
         return ros_point_cloud
                 
