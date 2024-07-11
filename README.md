@@ -1,9 +1,9 @@
 # Using the Workspace
 ## Building Packages
 
-After making any changes to the source files, the package must be rebuilt using colcon build. This wil create the build, install and log files
+After making any changes to the source files, the package must be rebuilt using colcon build. This will create the build, install and log files
 
-Always do this in a seperate command window than where you run the nodes
+Always do this in a separate command window than where you run the nodes
 
 ### Build all Packages
 
@@ -127,9 +127,10 @@ rqt_graph
 
 Use a the zedlaunch launch file to start
 - video_publisher node (arm camera)
-- video_subscriber node (arm camera)
-- masked_image_subscriber node (arm camera)
-- zed_distance_pub node (zed camera distance measurement)
+- zed_publisher node (zed camera)
+- arm_location_service node (service to identify apples from arm camera)
+- zed_location_service node (service to identify apples from zed camera)
+- video_subscriber node (both cameras) (used for debug)
 ```console
 ros2 launch launch/zedlaunch.py
 ```
