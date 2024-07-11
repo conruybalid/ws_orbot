@@ -2,21 +2,11 @@ import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
 
-from sensor_msgs.msg import Image
-from std_msgs.msg import Float32
-
 from custom_interfaces.msg import ArmControl
 from custom_interfaces.action import MoveArm
 from custom_interfaces.srv import GetLocation
 
-from masters.ImageProcess import processImage
-
 from kortex_api.autogen.messages import Base_pb2
-
-import cv2
-from cv_bridge import CvBridge
-import time
-
 
 
 class MasterNode(Node):
@@ -26,35 +16,28 @@ class MasterNode(Node):
     Currently, it completes its task and then destroys itself.
 
     Attributes:
-        Subscriptions:
-            image_sub (Subscription): A subscription to the color image topic. (arm camera)
-            depth_sub (Subscription): A subscription to the depth image topic. (arm camera)
-            distance_sub (Subscription): A subscription to the zed distance topic. (zed camera)
 
-        Publishers:
-            move_publisher (Publisher): A publisher for arm movement commands. (LEGACY: used arm_action_client instead)
-            absolute_move_publisher (Publisher): A publisher for absolute arm movement commands. (LEGACY: use arm_absolute_action_client instead)
-            Masked_publisher (Publisher): A publisher for the masked image topic.
+        Service Clients:
+            zed_client (ServiceClient): A service client for the zed location service. Returns the location of apples from the zed camera
+            arm_client (ServiceClient): A service client for the arm location service. Returns the location of apples from the arm camera
 
         Action Clients:
-            arm_action_client (ActionClient): An action client for the move arm action. (Relative movement)
-            arm_absolute_action_client (ActionClient): An action client for the absolute move arm action.  (absolute position)
+            arm_action_client (ActionClient): An action client for the move arm action.
 
         Other Attributes:
-            image_msg (Image): The latest image message received.
-            depth_msg (Image): The latest depth message received.
-            distance_msg (Float32): The latest distance message received.
+            distance (float): The distance to the apple from the zed camera. Used to determine how far the arm should reach out.
+
     """
-    def __init__(self, mode = 'ZED'):
+    def __init__(self):
         """
         Init fuction for the MasterNode class.
         calls the init function of the parent class (Node) and initializes the subscriptions, publishers and action clients.
         """
 
         super().__init__('Master_Node')
-        self.image_sub = self.create_subscription(Image, 'image_topic', self.image_callback, 10)
-        self.depth_sub = self.create_subscription(Image, 'depth_topic', self.depth_callback, 10)
-        
+
+        self.get_logger().info('Initializing Master Node')
+
         self.zed_client = self.create_client(GetLocation, 'zed_location_service')
         while not self.zed_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('zed_location_service not available, waiting again...')
@@ -63,50 +46,16 @@ class MasterNode(Node):
         while not self.arm_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Arm_Locate_Apple_Service not available, waiting again...')
         
-        self.distance_sub = self.create_subscription(Float32, 'zed_distance_topic', self.distance_callback, 10)
-        self.image_msg = None
-        self.depth_msg = None
-        self.distance_msg = None
+        self.distance = None
 
         self.arm_action_client = ActionClient(self, MoveArm, 'move_arm_action')
 
-        self.Masked_publisher = self.create_publisher(Image, 'masked_image_topic', 10)
-
         self.get_logger().info('Master Node Initialized')
 
-    """
-    Callback functions for the subscriptions.
-    Called whenever a message is received from the respective topic.
-    Assigns the received message to the respective attribute (image_msg, depth_msg, distance_msg)
-    """
-
-    def image_callback(self, msg):
-        self.image_msg = msg
-
-    def depth_callback(self, msg):
-        self.depth_msg = msg
-
-    def distance_callback(self, msg):
-        self.distance_msg = msg
-
-
-    def request_process_image(self, image_msg):
-        """
-        Process Image Service Client
-        Not used in the current implementation
-        Calls a service to create red mask and identify apples in the image.
-        """
-        self.process_request.image = image_msg
-        
-        self.future = self.process_client.call_async(self.process_request)
-        rclpy.spin_until_future_complete(self, self.future)
-        response = self.future.result()
-        self.future = None
-        return response
     
-    
+
     """
-    ZED LOCATION SERVICE CALL
+    SERVICE CALL FUNCTIONS
     """
     def call_zed_service(self):
         """
@@ -119,10 +68,6 @@ class MasterNode(Node):
         response = future.result()
         return response.error_status, response.apple_coordinates
     
-
-    """
-    Arm Location Service Call
-    """
     def call_arm_service(self):
         """
         Calls the arm location service to get the location of the apple in the image.
@@ -134,6 +79,7 @@ class MasterNode(Node):
         response = future.result()
         return response.error_status, response.apple_coordinates
     
+
     def process_service_error(self, error_code):
         """
         Processes the error code received from either camera service.
@@ -196,75 +142,18 @@ class MasterNode(Node):
 
         
         return result.result
-    
 
 
     """
-    SEARCH FUNCTION
-    This function is used to search for apples that may be out of frame
-    Hopefully this will be unnecessary in the future
+    GO TO APPLE FUNCTIONS
     """
-
-    def Search(self):
-        end_search = False
-
-        move_msg = ArmControl()
-        move_msg.position.x = 0.0
-        move_msg.position.y = 0.45
-        move_msg.position.z = 0.5
-        move_msg.angle.x = 0.0
-        move_msg.angle.y = 90.0
-        move_msg.angle.z = 90.0
-        move_msg.reference_frame = Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE
-        move_msg.gripper_state = 0
-
-        move_goal = MoveArm.Goal()
-        move_goal.goal = move_msg
-
-
-        while not end_search:
-            rclpy.spin_once(self)
-            image = CvBridge().imgmsg_to_cv2(self.image_msg)
-
-            num_apples, apple_coordinates, maskedImage = processImage(image)
-
-            mask_msg = CvBridge().cv2_to_imgmsg(cv2.multiply(maskedImage,255))
-            self.Masked_publisher.publish(mask_msg)
-
-            if num_apples <= 0:
-                if move_goal.goal.position.x < 0.3:
-                    self.send_move_goal(move_goal)
-                    self.get_logger().info(f'Published Search Arm Movement: {move_goal.goal.position.x}, {move_goal.goal.position.y}')
-
-                    move_goal.goal.position.x += 0.1
-                
-                elif move_goal.goal.position.y < 0.6:
-                    self.send_move_goal(move_goal)
-                    self.get_logger().info(f'Published Search Arm Movement: {move_goal.goal.position.x}, {move_goal.goal.position.y}')
-
-                    move_goal.goal.position.y += 0.1
-                    move_goal.goal.position.x = 0.0
-                    
-
-                else:
-                    self.get_logger().info('No apples found')
-                    end_search = True
-                    self.send_move_goal(self.format_move_goal([0.0, 0.45, 0.5]))
-
-            else:
-                end_search = True
-                self.get_logger().info('Apple found')
-
-        return
-
-
-    """
-    CENTER APPLE FUNCTIONS
-    These functions are used to center the apple in the frame.
-    """
-
+   
     def Go_to_Apple(self):
-        self.get_logger().info('Asking Camera for Apple Location')
+        """
+        Will ask the zed_location_service for the location of the apple relative to the base of the arm.
+        Then it will move the arm to that location.
+        """
+        self.get_logger().info('Asking Zed Camera for Apple Location')
         error_status, point = self.call_zed_service()
         
         if error_status != 0:
@@ -285,10 +174,17 @@ class MasterNode(Node):
             return False
 
         return True
+    
+
+
+    """
+    CENTER APPLE FUNCTIONS
+    These functions are used to center the apple in the frame.
+    """
 
     def center_apple(self):
         """
-        Will apply a mask to the image and find the apple location.
+        Will ask the arm_location_service for the location of the apple relative to the arm.
         Then it will move the arm to attempt to center the apple in the frame.
         It will continue until the apple is within a certain range of the center of the frame and return True.
         If sight of the apple is lost, the function will return False.
@@ -364,6 +260,7 @@ class MasterNode(Node):
         """
         Once the apple is within the gripper's reach, 
         this function can be used to grab the apple and deposit it in the basket.
+        movement goals are in an if statement to ensure they have been completed before moving on.
         """
 
         try:
@@ -392,12 +289,10 @@ class MasterNode(Node):
 
 
             
-
+        # If the user aborts the program, the gripper will open
         except KeyboardInterrupt:
             self.get_logger().info('Abort, Opening Gripper')
             self.send_move_goal(self.format_move_goal(gripper_state=1))
-
-
 
 
         return
@@ -409,12 +304,17 @@ class MasterNode(Node):
     """
 
     def run(self):
+        """
+        This function:
+        Moves the arm to the apple with info form the zed camera
+        Then it centers the apple using the arm camera
+        Then it reaches for the apple
+        Then it grabs the apple and deposits it in the basket
+        """
+
         self.get_logger().info('Master Node Routine Started')
         try:
             while True:
-                while (self.image_msg is None):
-                    self.get_logger().info('Waiting for images')
-                    rclpy.spin_once(self)
 
                 if not self.Go_to_Apple():
                     break
@@ -430,7 +330,6 @@ class MasterNode(Node):
                         # Grab the Apple
                         self.grab_apple()
 
-
                 else:
                     self.get_logger().info('No depth found \nPerfroming placeholder "reach for apple"')
                     self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, 0.2]))
@@ -439,7 +338,9 @@ class MasterNode(Node):
 
         except KeyboardInterrupt:
             self.get_logger().info('Routine Aborted')
-        
+
+
+        # Return to home position
         self.send_move_goal(self.format_move_goal(position=[0.0, 0.5, 0.5], angle=[0.0, 90.0, 90.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
 
     
