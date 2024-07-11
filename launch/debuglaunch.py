@@ -13,7 +13,7 @@ def generate_launch_description():
         ),
         Node(
             package='image_processing',
-            executable='rgb_image_service',
+            executable='arm_location_service',
         ),
         # Node(
         #     package='get_pic',
