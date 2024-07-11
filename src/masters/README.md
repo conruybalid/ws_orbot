@@ -11,10 +11,3 @@ The main routine consists of
 - disposing of the apple
 Once it completes its task, it then destroys itself.
 
-# Other Functions
-
-## ImageProcess.py
-
-This function is used to process the image from the arm camera. It applies a red mask and identifies the location of the apple.
-
-Hopefully this will be replaced by a service call
