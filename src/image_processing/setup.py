@@ -20,8 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'rgb_image_service = image_processing.service_function:main',
-            'test_client = image_processing.test_client_function:main',
+            'arm_location_service = image_processing.arm_location_service:main',
             'zed_location_service = image_processing.zed_location_service:main'
         ],
     },
