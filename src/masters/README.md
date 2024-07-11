@@ -4,7 +4,7 @@
 
 This node is the main node that ties the other nodes together and performs the main logic of the system.
 The main routine consists of
-- searching for the apple
+- going to the apple
 - centering on the apple
 - reaching for the apple
 - grapping the apple
