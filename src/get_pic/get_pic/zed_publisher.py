@@ -6,7 +6,6 @@ import sensor_msgs.msg
 import cv2
 from cv_bridge import CvBridge
 import numpy as np
-from get_pic.VideoQueue import VideoStreamHandler
 
 import pyzed.sl as sl
 
@@ -59,34 +58,38 @@ class ZedPublisher(Node):
 
 
     def publish_images(self):
-        # Retrieve the image, depth, and point cloud
-        self.zed.retrieve_image(self.image, sl.VIEW.LEFT) # Get the left image
-        self.zed.retrieve_measure(self.depth, sl.MEASURE.DEPTH) # Retrieve depth matrix. Depth is aligned on the left RGB image
-        self.zed.retrieve_measure(self.point_cloud, sl.MEASURE.XYZRGBA) # Retrieve colored point cloud
+        # Grab an image
+        if self.zed.grab(self.runtime_parameters) == sl.ERROR_CODE.SUCCESS:
+            # A new image is available if grab() returns sl.ERROR_CODE.SUCCESS
+
+            # Retrieve the image, depth, and point cloud
+            self.zed.retrieve_image(self.image, sl.VIEW.LEFT) # Get the left image
+            self.zed.retrieve_measure(self.depth, sl.MEASURE.DEPTH) # Retrieve depth matrix. Depth is aligned on the left RGB image
+            self.zed.retrieve_measure(self.point_cloud, sl.MEASURE.XYZRGBA) # Retrieve colored point cloud
 
 
-        if self.image is not None:
-            image_msg = self.sl_mat_to_ros_image(self.image)
-            self.rgbpublisher_.publish(image_msg)
-            self.get_logger().info('Image published')
-        else:
-            self.get_logger().info('self.image is None')
+            if self.image is not None:
+                image_msg = self.sl_mat_to_ros_image(self.image)
+                self.rgbpublisher_.publish(image_msg)
+                self.get_logger().info('Image published')
+            else:
+                self.get_logger().info('self.image is None')
 
-        # depth
-        if self.depth is not None:
-            depth_msg = self.sl_mat_to_ros_image(self.depth)
-            self.depthpublisher_.publish(depth_msg)
-            self.get_logger().info('Depth published')
-        else:
-            self.get_logger().info('self.depth is None')
+            # depth
+            if self.depth is not None:
+                depth_msg = self.sl_mat_to_ros_image(self.depth)
+                self.depthpublisher_.publish(depth_msg)
+                self.get_logger().info('Depth published')
+            else:
+                self.get_logger().info('self.depth is None')
 
-        # point cloud    
-        if self.point_cloud is not None:
-            point_cloud_msg = self.zed_point_cloud_to_ros_point_cloud2(self.point_cloud)
-            self.pointcloutpublisher_.publish(point_cloud_msg)
-            self.get_logger().info('point cloud published')
-        else:
-            self.get_logger().info('self.point_cloud is None')
+            # point cloud    
+            if self.point_cloud is not None:
+                point_cloud_msg = self.zed_point_cloud_to_ros_point_cloud2(self.point_cloud)
+                self.pointcloutpublisher_.publish(point_cloud_msg)
+                self.get_logger().info('point cloud published')
+            else:
+                self.get_logger().info('self.point_cloud is None')
     
     
     def sl_mat_to_ros_image(self, zed_image: sl.Mat):
