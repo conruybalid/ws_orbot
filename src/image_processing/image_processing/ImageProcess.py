@@ -5,7 +5,11 @@ import os
 from cv_bridge import CvBridge
 from geometry_msgs.msg import Point
 
-
+"""
+Used to process an image and determine the location of apples in the image.
+Follows the same algorithm used in the matlab code.
+Can be tested by running this file
+"""
 
 def processImage(image, imageNum=0):
     # Split the RGB channels of the image

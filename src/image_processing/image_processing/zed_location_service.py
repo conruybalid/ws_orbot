@@ -14,10 +14,32 @@ import pyzed.sl as sl
 import numpy as np
 
 
-class ZedPublisher(Node):
+
+class ZedLocation(Node):
+    """
+    This class is a ROS2 node that provides a service for locating apples in an image. 
+    The node subscribes to an image topic, processes the image, and returns the location of the apples in the image when called.
+
+    Attributes:
+
+        Service Clients:
+            locate_apple_service (Service): A service for locating apples in an image.
+
+        Subscribers:
+            zed_rgb_sub (Subscriber): A subscriber for the RGB image topic from the zed camera.
+
+        publishers:
+            maskpublisher (Publisher): A publisher for the mask created during processing (for debug).
+
+        Other Attributes:
+            zed_image (numpy.ndarray): The RGB image received from the zed camera.
+            zed_pointcloud (numpy.ndarray): The point cloud received from the zed camera.
+
+    """
+
     def __init__(self):
         super().__init__('zed_location_service_node')
-        self.distancepublisher_ = self.create_service(GetLocation, 'zed_location_service', self.process_image_callback)
+        self.zed_location_service = self.create_service(GetLocation, 'zed_location_service', self.process_image_callback)
         self.zed_rgb_sub = self.create_subscription(Image, 'zed_image_topic', self.zed_image_callback, 10)
         self.zed_image = None
         self.zed_pc_sub = self.create_subscription(PointCloud2, 'zed_pointcloud_topic', self.zed_pointcloud_callback, 10)
@@ -26,6 +48,9 @@ class ZedPublisher(Node):
         self.get_logger().info('Distance publisher node has been initialized')
         
 
+    """
+    CALLBACK FUNCTIONS
+    """
 
     def zed_image_callback(self, msg):
         self.zed_image = CvBridge().imgmsg_to_cv2(msg)
@@ -36,6 +61,9 @@ class ZedPublisher(Node):
         self.zed_pointcloud = self.ros_point_cloud2_to_zed_point_cloud(msg)
 
     def ros_point_cloud2_to_zed_point_cloud(self, ros_point_cloud):
+        """
+        Used to convert a ROS PointCloud2 message to a NumPy array of points. (only works for xyz)
+        """
         # Assuming ros_point_cloud is a PointCloud2 message
         # Extract fields and data from the PointCloud2 message
         height, width = ros_point_cloud.height, ros_point_cloud.width
@@ -55,6 +83,11 @@ class ZedPublisher(Node):
 
 
     def process_image_callback(self,  request, response):
+        """
+        when called, applies a red mask to the rgb image and locates the apple in the image.
+        If an apple is found, returns the location of the apple as reported in the point cloud.
+        Else, returns a failed_coordinates object with error_status 1.
+        """
         # Grab an image
         if self.zed_image is not None and self.zed_pointcloud is not None:
             
@@ -133,8 +166,6 @@ class ZedPublisher(Node):
             response.error_status = 3
 
 
-
-
         return response
     
     
@@ -142,7 +173,7 @@ class ZedPublisher(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    zed_service = ZedPublisher()
+    zed_service = ZedLocation()
     # Check if the stream is opened successfully  
     rclpy.spin(zed_service)
     zed_service.destroy_node()

@@ -6,10 +6,33 @@ from sensor_msgs.msg import Image
 
 import cv2
 from cv_bridge import CvBridge
-#from ImageProcess import processImage
+
 from image_processing.ImageProcess import processImage
 
+
+
 class ImageProcessingService(Node):
+    """
+    This class is a ROS2 node that provides a service for locating apples in an image. 
+    The node subscribes to an image topic, processes the image, and returns the location of the apples in the image when called.
+
+    Attributes:
+
+        Service Clients:
+            locate_apple_service (Service): A service for locating apples in an image.
+
+        Subscribers:
+            arm_rgb_sub (Subscriber): A subscriber for the RGB image topic from the arm.
+
+        publishers:
+            Masked_publisher (Publisher): A publisher for the mask created during processing (for debug).
+
+        Other Attributes:
+            rgb_image (numpy.ndarray): The RGB image received from the arm camera.
+
+    """
+
+
     def __init__(self):
         super().__init__('Arm_Locate_Apple_Service')
         self.locate_apple_service = self.create_service(GetLocation, 'Arm_Locate_Apple_Service', self.process_image_callback)
@@ -18,11 +41,19 @@ class ImageProcessingService(Node):
 
         self.rgb_image = None
 
+    """
+    CALLBACK FUNCTIONS
+    """
+
     def image_callback(self, msg):
         self.rgb_image = CvBridge().imgmsg_to_cv2(msg)
         #self.get_logger().info('Image received')
 
     def process_image_callback(self, request, response):
+        """
+        When called, uses the ImageProcess function (imported) to apply a red mask to the image and locate the apples.
+        If apples are not found, returns a failed_coordinates object with error_status 1.
+        """
         failed_coordinates = GetLocation.Response().apple_coordinates
         failed_coordinates.x = 99.0
         failed_coordinates.y = 99.0
