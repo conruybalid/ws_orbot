@@ -42,8 +42,18 @@ def check_for_end_or_abort(e):
         or notification.action_event == Base_pb2.ACTION_ABORT:
             e.set()
     return check
- 
-def example_move_to_home_position(base):
+
+
+"""
+FUNCTIONS FOR MOVING THE ARM
+"""
+
+def move_to_home_position(base):
+    """
+    Moves the Robot Arm to a safe position
+    """
+
+
     # Make sure the arm is in Single Level Servoing mode
     base_servo_mode = Base_pb2.ServoingModeInformation()
     base_servo_mode.servoing_mode = Base_pb2.SINGLE_LEVEL_SERVOING
@@ -78,21 +88,11 @@ def example_move_to_home_position(base):
     else:
         print("Timeout on action notification wait")
     return finished
-def populateCartesianCoordinate(waypointInformation):
-    
-    waypoint = Base_pb2.CartesianWaypoint()  
-    waypoint.pose.x = waypointInformation[0]
-    waypoint.pose.y = waypointInformation[1]
-    waypoint.pose.z = waypointInformation[2]
-    waypoint.blending_radius = waypointInformation[3]
-    waypoint.pose.theta_x = waypointInformation[4]
-    waypoint.pose.theta_y = waypointInformation[5]
-    waypoint.pose.theta_z = waypointInformation[6] 
-    waypoint.reference_frame = Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE
-    
-    return waypoint
 
-def example_trajectory(base, base_cyclic, waypointsDefinition):
+def move_trajectory(base, base_cyclic, waypointsDefinition):
+    """
+    Moves the robot arm to the specified cartesian waypoint
+    """
 
     base_servo_mode = Base_pb2.ServoingModeInformation()
     base_servo_mode.servoing_mode = Base_pb2.SINGLE_LEVEL_SERVOING
@@ -103,11 +103,10 @@ def example_trajectory(base, base_cyclic, waypointsDefinition):
     waypoints.duration = 0.0
     waypoints.use_optimal_blending = True
     
-    index = 0
     waypoint = waypoints.waypoints.add()
-    waypoint.name = "waypoint_" + str(index)   
+    waypoint.name = "waypoint"   
     waypoint.cartesian_waypoint.CopyFrom(waypointsDefinition)
-    index = index + 1 
+
 
     # Verify validity of waypoints
     result = base.ValidateWaypointList(waypoints)
@@ -135,8 +134,27 @@ def example_trajectory(base, base_cyclic, waypointsDefinition):
         
     else:
         print("Error found in trajectory") 
-        result.trajectory_error_report.PrintDebugString();  
+        result.trajectory_error_report.PrintDebugString();
 
+
+
+"""
+FUNCTIONS FOR TESTING
+"""
+
+def populateCartesianCoordinate(waypointInformation):
+    
+    waypoint = Base_pb2.CartesianWaypoint()  
+    waypoint.pose.x = waypointInformation[0]
+    waypoint.pose.y = waypointInformation[1]
+    waypoint.pose.z = waypointInformation[2]
+    waypoint.blending_radius = waypointInformation[3]
+    waypoint.pose.theta_x = waypointInformation[4]
+    waypoint.pose.theta_y = waypointInformation[5]
+    waypoint.pose.theta_z = waypointInformation[6] 
+    waypoint.reference_frame = Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE
+    
+    return waypoint
 
 def get_coordinates_from_user():
     # Get the x, y, z coordinates from the user
@@ -165,7 +183,7 @@ def main():
         # Example core
         success = True
 
-        success &= example_move_to_home_position(base)
+        success &= move_to_home_position(base)
 
         while True:
             # Get the coordinates from the user
@@ -174,17 +192,11 @@ def main():
                         # Assuming base_cyclic is your BaseCyclic object and you've already connected to the robot
             feedback = base_cyclic.RefreshFeedback()
 
-            # Accessing the X, Y, Z position of the tool
-            tool_x = feedback.base.tool_pose_x
-            tool_y = feedback.base.tool_pose_y
-            tool_z = feedback.base.tool_pose_z
-
-
             # Update the waypointsDefinition with the new coordinates
             waypointsDefinition = (coordinates[2], coordinates[0], coordinates[1], 0.0, 90.0, 0.0, 90.0)
             waypointsDefinition = populateCartesianCoordinate(waypointsDefinition)
 
-            success &= example_trajectory(base, base_cyclic, waypointsDefinition)
+            success &= move_trajectory(base, base_cyclic, waypointsDefinition)
        
         return 0 if success else 1
 

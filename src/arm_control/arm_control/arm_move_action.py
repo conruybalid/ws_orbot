@@ -9,15 +9,29 @@ import arm_control.utilities as utilities
 from kortex_api.autogen.client_stubs.BaseClientRpc import BaseClient
 from kortex_api.autogen.client_stubs.BaseCyclicClientRpc import BaseCyclicClient
 
-from kortex_api.autogen.messages import Base_pb2, BaseCyclic_pb2, Common_pb2
+from kortex_api.autogen.messages import Base_pb2, BaseCyclic_pb2
 
-from arm_control.mytry import example_move_to_home_position, example_trajectory
+from arm_control.moveArm import move_to_home_position, move_trajectory
 from arm_control.gripperControl import GripperCommand
-
-import time
 
 
 class MoveArmServer(Node):
+    """
+    Action server for the MoveArm action.
+
+    This class handles the execution of the MoveArm action. It receives a goal from a client,
+    moves the arm to the specified position, and controls the gripper based on the gripper state
+    specified in the goal.
+
+    Args:
+        router: The router object used for communication with the robot.
+
+    Attributes:
+        action_server (ActionServer): The action server instance for the move_arm_action.
+        router: The router object used for communication with the robot.
+        gripper_control (GripperCommand): The gripper control instance.
+    """
+
     def __init__(self, router):
         super().__init__('move_arm_server')
         self.action_server = ActionServer(
@@ -35,13 +49,21 @@ class MoveArmServer(Node):
         # Example core
         success = True
 
-        success &= example_move_to_home_position(base)
+        success &= move_to_home_position(base)
 
         self.gripper_control = GripperCommand(self.router)
 
-
-
     def FormatWaypoint(self, waypointInformation: MoveArm.Goal, feedback: BaseCyclic_pb2.Feedback):
+        """
+        Format the waypoint information based on the reference frame.
+
+        Args:
+            waypointInformation (MoveArm.Goal): The goal containing the waypoint information.
+            feedback (BaseCyclic_pb2.Feedback): The feedback received from the robot.
+
+        Returns:
+            Base_pb2.CartesianWaypoint: The formatted waypoint.
+        """
         waypoint = Base_pb2.CartesianWaypoint()
         
         if waypointInformation.reference_frame == Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL:
@@ -79,12 +101,20 @@ class MoveArmServer(Node):
         
         return waypoint
 
-
-
     def execute_callback(self, goal_handle):
-        # Implement your action server logic here
-        # You can access the goal, feedback, and result using goal_handle
-        # For example:
+        """
+        Execute the MoveArm action.
+
+        This method is called when a goal is received from a client. It moves the arm to the specified position
+        and controls the gripper based on the gripper state specified in the goal.
+
+        Args:
+            goal_handle (ActionServer.GoalHandle): The goal handle containing the goal, feedback, and result.
+
+        Returns:
+            MoveArm.Result: The result of the action execution. (True if successful, False otherwise)
+        """
+
         goal = goal_handle.request.goal
         feedback = MoveArm.Feedback()
         result = MoveArm.Result()
@@ -112,7 +142,7 @@ class MoveArmServer(Node):
         waypointsDefinition = self.FormatWaypoint(goal, feedback)
 
         try:
-            success &= example_trajectory(base, base_cyclic, waypointsDefinition)
+            success &= move_trajectory(base, base_cyclic, waypointsDefinition)
         except:
             self.get_logger().info(f'Error in trajectory: {coordinates[0]}, {coordinates[1]}, {coordinates[2]}')
             goal_handle.abort()
@@ -139,11 +169,6 @@ class MoveArmServer(Node):
 
         else:
             self.get_logger().info('Invalid gripper state')
-
-
-
-
-        
 
 
         # Check if the action was canceled
