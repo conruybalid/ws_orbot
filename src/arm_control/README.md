@@ -9,7 +9,11 @@ This node creates an action that uses the ArmMove action from custom_interfaces.
 
 ## mytry.py
 
-This file contains a function to move the arm used in the arm_move_action node. It can be run on it's own to test waypoints. 
+This file contains a function to move the arm used in the arm_move_action node. It can be run on it's own to test waypoints.
+
+## gripperControl.py
+
+This file contains a class that is used for opening and closing the gripper. It can be run on it's own for testing
 
 ## utilities.py
 
