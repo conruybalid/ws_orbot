@@ -12,12 +12,13 @@ from kortex_api.autogen.client_stubs.BaseCyclicClientRpc import BaseCyclicClient
 from kortex_api.autogen.messages import Base_pb2, BaseCyclic_pb2, Common_pb2
 
 from arm_control.mytry import example_move_to_home_position, example_trajectory
+from arm_control.gripperControl import GripperCommand
 
 import time
 
 
 class MoveArmServer(Node):
-    def __init__(self):
+    def __init__(self, router):
         super().__init__('move_arm_server')
         self.action_server = ActionServer(
             self,
@@ -26,19 +27,18 @@ class MoveArmServer(Node):
             self.execute_callback
         )
 
-        self.args = utilities.parseConnectionArguments()
-        self.router = None
+        self.router = router        
 
-        # Create connection to the device and get the router
-        with utilities.DeviceConnection.createTcpConnection(self.args) as test_router:
+        # Create required services
+        base = BaseClient(self.router)
+        
+        # Example core
+        success = True
 
-            # Create required services
-            base = BaseClient(test_router)
-            
-            # Example core
-            success = True
+        success &= example_move_to_home_position(base)
 
-            success &= example_move_to_home_position(base)
+        self.gripper_control = GripperCommand(self.router)
+
 
 
     def FormatWaypoint(self, waypointInformation: MoveArm.Goal, feedback: BaseCyclic_pb2.Feedback):
@@ -120,7 +120,28 @@ class MoveArmServer(Node):
         
         self.get_logger().info('Moved to position: %f, %f, %f' % (feedback.base.tool_pose_x, feedback.base.tool_pose_y, feedback.base.tool_pose_z))
 
-        self.gripper_control(base, gripper_state)
+
+        # Gripper control
+
+        # Do nothing with the gripper
+        if gripper_state == 0:
+            pass
+
+        # Open Gripper
+        elif gripper_state == 1:
+            self.gripper_control.OpenGripper()
+            self.get_logger().info('Gripper opened')
+
+        # Close Gripper
+        elif gripper_state == 2:
+            self.gripper_control.GripApple()
+            self.get_logger().info('Gripper closed')
+
+        else:
+            self.get_logger().info('Invalid gripper state')
+
+
+
 
         
 
@@ -136,73 +157,16 @@ class MoveArmServer(Node):
         
         return result
     
-
-    def gripper_control(self, base, gripper_state):
-        # Create the GripperCommand we will send
-        gripper_command = Base_pb2.GripperCommand()
-        finger = gripper_command.gripper.finger.add()
-        gripper_request = Base_pb2.GripperRequest()
-
-        # Do nothing with the gripper
-        if gripper_state == 0:
-            pass
-
-        # Open Gripper
-        elif gripper_state == 1:
-            # Set speed to open gripper
-            print ("Opening gripper using speed command...")
-            gripper_command.mode = Base_pb2.GRIPPER_SPEED
-            finger.value = 0.1
-            base.SendGripperCommand(gripper_command)
-
-            # Wait for reported position to be opened
-            gripper_request.mode = Base_pb2.GRIPPER_POSITION
-            while True:
-                gripper_measure = base.GetMeasuredGripperMovement(gripper_request)
-                if len (gripper_measure.finger):
-                    print("Current position is : {0}".format(gripper_measure.finger[0].value))
-                    if gripper_measure.finger[0].value < 0.01:
-                        break
-                else: # Else, no finger present in answer, end loop
-                    break
-
-            self.get_logger().info('Gripper opened')
-
-        # Close Gripper
-        elif gripper_state == 2:
-            # Set speed to close gripper
-            print ("Closing gripper using speed command...")
-            gripper_command.mode = Base_pb2.GRIPPER_SPEED
-            finger.value = -0.05
-            base.SendGripperCommand(gripper_command)
-
-            time.sleep(0.05)
-
-            # Wait for reported speed to be 0
-            gripper_request.mode = Base_pb2.GRIPPER_SPEED
-            while True:
-                gripper_measure = base.GetMeasuredGripperMovement(gripper_request)
-                if len (gripper_measure.finger):
-                    print("Current speed is : {0}".format(gripper_measure.finger[0].value))
-                    if gripper_measure.finger[0].value == 0.0:
-                        break
-                else: # Else, no finger present in answer, end loop
-                    break
-
-            self.get_logger().info('Gripper closed')
-
-        else:
-            self.get_logger().info('Invalid gripper state')
-
+        
 
 
 
 
 def main(args=None):
     rclpy.init(args=args)
-    action_server = MoveArmServer()
-    with utilities.DeviceConnection.createTcpConnection(action_server.args) as router:
-        action_server.router = router
+    args = utilities.parseConnectionArguments()
+    with utilities.DeviceConnection.createTcpConnection(args) as router:
+        action_server = MoveArmServer(router)
         rclpy.spin(action_server)
     action_server.destroy_node()
     rclpy.shutdown()
