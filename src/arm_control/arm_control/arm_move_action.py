@@ -50,6 +50,7 @@ class MoveArmServer(Node):
         success = True
 
         success &= move_to_home_position(base)
+        self.get_logger().info('Moved to home position')
 
         self.gripper_control = GripperCommand(self.router)
 
@@ -188,9 +189,10 @@ class MoveArmServer(Node):
 
 
 def main(args=None):
+    print(f'arguments: {args}')
     rclpy.init(args=args)
-    args = utilities.parseConnectionArguments()
-    with utilities.DeviceConnection.createTcpConnection(args) as router:
+    arm_args = utilities.parseConnectionArguments()
+    with utilities.DeviceConnection.createTcpConnection(arm_args) as router:
         action_server = MoveArmServer(router)
         rclpy.spin(action_server)
     action_server.destroy_node()

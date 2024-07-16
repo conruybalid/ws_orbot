@@ -11,28 +11,28 @@ def generate_launch_description():
             package='get_pic',
             executable='video_subscriber',
         ),
+
         Node(
             package='image_processing',
             executable='arm_location_service',
         ),
-        # Node(
-        #     package='get_pic',
-        #     executable='masked_image_subscriber',
-        # ),
 
-        # Node(
-        #     package='pick_apple',
-        #     executable='search_apple',
-        # ),
+        Node(
+            package='get_pic',
+            executable='zed_publisher',
+        ),
 
-        # Node(
-        #     package='pick_apple',
-        #     executable='pick_apple_action_server',
-        # ),
-
-
+        Node(
+            package='image_processing',
+            executable='zed_location_service',
+        ),
         Node(
             package='arm_control',
             executable='arm_move_action',
+        ),
+        
+        Node(
+            package='masters',
+            executable='master_node',
         ),
     ])
