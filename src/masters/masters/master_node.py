@@ -8,6 +8,8 @@ from custom_interfaces.srv import GetLocation
 
 from kortex_api.autogen.messages import Base_pb2
 
+import time
+
 
 class MasterNode(Node):
     """
@@ -154,10 +156,14 @@ class MasterNode(Node):
         Then it will move the arm to that location.
         """
         self.get_logger().info('Asking Zed Camera for Apple Location')
-        error_status, point = self.call_zed_service()
-        
+        for _ in range(3):     
+            error_status, point = self.call_zed_service()
+           
+            if error_status != 0:
+                self.process_service_error(error_status)
+                time.sleep(5)
+                continue
         if error_status != 0:
-            self.process_service_error(error_status)
             return False
         
         x = point.x
@@ -382,8 +388,8 @@ def main(args=None):
     """
     rclpy.init(args=args)
     node = MasterNode()
-    rclpy.spin_once(node)
-    node.run() # Run the main routine
+    rclpy.spin_once(node, timeout_sec=1.0)
+    node.run() # Run the main routine       
     node.get_logger().info('Destroying Master Node')
     node.arm_action_client.destroy()
     node.destroy_node()

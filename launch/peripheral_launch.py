@@ -14,7 +14,7 @@ def generate_launch_description():
         Node(
             package='get_pic',
             executable='video_subscriber',
-            arguments=['--ros-args', '--log-level', 'WARN']
+            arguments=['--ros-args', '--log-level', 'INFO']
 
         ),
 
@@ -39,13 +39,8 @@ def generate_launch_description():
         Node(
             package='arm_control',
             executable='arm_move_action',
-            arguments=['--ros-args', '--log-level', 'WARN']
+            arguments=['--ros-args', '--log-level', 'INFO']
 
         ),
-        
-        Node(
-            package='masters',
-            executable='master_node',
-            arguments=['--ros-args', '--log-level', 'INFO']
-        ),
+    
     ])

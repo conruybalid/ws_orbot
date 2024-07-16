@@ -125,19 +125,15 @@ rqt_graph
 
 # Running the Current System
 
-Use a the zedlaunch launch file to start
+Use a the peripheral_launch launch file to start
 - video_publisher node (arm camera)
 - zed_publisher node (zed camera)
 - arm_location_service node (service to identify apples from arm camera)
 - zed_location_service node (service to identify apples from zed camera)
 - video_subscriber node (both cameras) (used for debug)
+- arm_move_action (action node to move the arm)
 ```console
-ros2 launch launch/zedlaunch.py
-```
-
-In a new terminal, start the arm_move_action node (control the arm)
-```console
-ros2 run arm_control arm_move_action
+ros2 launch launch/peripheral_launch.py
 ```
 
 In a new terminal, start the master_node node (begin pick apple routine)
