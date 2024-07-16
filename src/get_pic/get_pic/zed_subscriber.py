@@ -2,7 +2,6 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import PointCloud2
-#import point_cloud2_methods as pc2
 import open3d as o3d
 
 
@@ -14,6 +13,21 @@ import numpy as np
 
 
 class VideoSubscriber(Node):
+    """
+    This Node is used to test the outputs of the zed_publisher node
+
+    Attributes:
+    
+            subscriptions:
+                subscription (subscription): subscribes to zed_image_topic
+                depth_subscription (subscription): subscribes to zed_depth_topic
+                pointcloud_subscription (subscription): subscribes to zed_pointcloud_topic
+            
+    
+            Other Attributes:
+                bridge (CvBridge): bridge to convert ROS Image messages to OpenCV images
+    """
+
     def __init__(self):
         super().__init__('zed_subscriber')
         self.subscription = self.create_subscription(
@@ -40,6 +54,10 @@ class VideoSubscriber(Node):
         
         self.bridge = CvBridge()
 
+    """
+    CALLBACK FUNCTIONS
+    """
+
     def image_callback(self, msg):
         self.get_logger().info('Received a color image')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
@@ -63,6 +81,9 @@ class VideoSubscriber(Node):
 
 
     def ros_point_cloud2_to_zed_point_cloud(self, ros_point_cloud):
+        """
+        Convert a ROS2 PointCloud2 message to a NumPy array of points (xyz data only)
+        """
         # Assuming ros_point_cloud is a PointCloud2 message
         # Extract fields and data from the PointCloud2 message
         height, width = ros_point_cloud.height, ros_point_cloud.width

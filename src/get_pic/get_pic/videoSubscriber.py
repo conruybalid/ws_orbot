@@ -7,6 +7,30 @@ from screeninfo import get_monitors
 import numpy as np
 
 class VideoSubscriber(Node):
+    """
+    This Node is used to view usefull image outputs for debug in a 4x4 grid
+    If images are not available, a black image with a red border will be displayed
+
+    Attributes:
+
+        subscriptions:
+            arm_rgb_sub (subscription): subscribes to image_topic
+            arm_depth_sub (subscription): subscribes to depth_topic
+            arm_mask_sub (subscription): subscribes to masked_image_topic
+            zed_image_subscription (subscription): subscribes to zed_image_topic
+            zed_mask_subscription (subscription): subscribes to zed_mask_topic
+
+        other attributes:
+            timer (timer): timer to display images at a fixed rate
+            bridge (CvBridge): bridge to convert ROS Image messages to OpenCV images
+            rgb_arm_image (np.array): latest image from arm camera
+            arm_depth_image (np.array): latest depth image from arm camera
+            arm_mask_image (np.array): latest masked image from arm camera
+            zed_image (np.array): latest image from zed camera
+            zed_mask_image (np.array): latest masked image from zed camera
+            images (list): list of images to display
+
+    """
     def __init__(self):
         super().__init__('video_subscriber')
         self.arm_rgb_sub = self.create_subscription(
@@ -49,7 +73,7 @@ class VideoSubscriber(Node):
         )
         self.zed_mask_image = None
 
-        self.create_timer(0.1, self.display_images)
+        self.timer = self.create_timer(0.1, self.display_images)
 
         self.bridge = CvBridge()
 
@@ -68,6 +92,10 @@ class VideoSubscriber(Node):
 
 
         self.images = [black_image, black_image, black_image, black_image]
+
+    """
+    CALLBACK FUNCTIONS
+    """
 
     def arm_image_callback(self, msg):
         #self.get_logger().info('Received an image')
@@ -119,11 +147,18 @@ class VideoSubscriber(Node):
         # cv2.waitKey(1)
 
     def Resize_to_screen(self, image):
+        """
+        Resized the image to fit the screen
+        """
         width = int(self.screen.width / 2.5)
         height = int(self.screen.height / 2.5)
         return cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
     
     def display_images(self):
+        """
+        Called by the timer to display images
+        Combines images in self.images into a 4x4 grid and displays them
+        """
         try:
             get_monitors()
         except:

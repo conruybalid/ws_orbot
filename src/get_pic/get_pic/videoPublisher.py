@@ -5,14 +5,35 @@ import cv2
 from cv_bridge import CvBridge
 from get_pic.VideoQueue import VideoStreamHandler
 
+
 class VideoPublisher(Node):
+    """
+    This class is a ROS2 node that collects and publishes images from the Arm Camera 
+
+    Attributes:
+
+        publishers:
+            rgbpublisher_ (publisher): publishes rgb image to image_topic
+            depthpublisher_ (publisher): publishes depth image to depth_topic (not working)
+
+        Other Attributes:
+            self.timer_ (timer): timer to publish images at a fixed rate
+            rtsp_url (str): rtsp stream url
+            depth_url (str): rtsp stream url for depth
+            video_stream_handler (VideoStreamHandler): object to handle video stream
+            depth_stream_handler (VideoStreamHandler): object to handle video stream for depth
+
+            image_msg (Image): Image message to publish
+            depth_msg (Image): Image message to publish for depth
+
+    """
+
     def __init__(self):
         super().__init__('video_publisher')
         self.rgbpublisher_ = self.create_publisher(Image, 'image_topic', 10)
         self.depthpublisher_ = self.create_publisher(Image, 'depth_topic', 10)
         self.timer_ = self.create_timer(0.1, self.publish_images)
         self.get_logger().info('Video publisher node has been initialized')
-
         
         # RTSP stream URL
         rtsp_url = "rtsp://192.168.1.10/color"
@@ -28,6 +49,11 @@ class VideoPublisher(Node):
 
 
     def publish_images(self):
+        """
+        Called every time the timer is triggered to publish images
+        Retrieves the latest frame from the video stream handlers and publishes it
+        Depth image is not working
+        """
         # Create an Image message and publish it
         frame = self.video_stream_handler.get_latest_frame()
         if frame is not None:

@@ -11,6 +11,27 @@ import pyzed.sl as sl
 
 
 class ZedPublisher(Node):
+    """
+    This class is a ROS2 node that collects and publishes images from the Zed Camera 
+
+    Attributes:
+
+        publishers:
+            rgbpublisher_ (publisher): publishes rgb image to zed_image_topic
+            depthpublisher_ (publisher): publishes depth image to zed_depth_topic
+            pointcloutpublisher_ (publisher): publishes point cloud to zed_pointcloud_topic (just xyz for now)
+
+        Other Attributes:
+            self.timer_ (timer): timer to publish images at a fixed rate
+            zed (sl.Camera): ZED camera object
+            runtime_parameters (sl.RuntimeParameters): ZED runtime parameters
+            image (sl.Mat): ZED image object
+            depth (sl.Mat): ZED depth object
+            point_cloud (sl.Mat): ZED point cloud object
+
+
+    """
+
     def __init__(self):
         super().__init__('zed_publisher')
         self.rgbpublisher_ = self.create_publisher(Image, 'zed_image_topic', 10)
@@ -55,11 +76,13 @@ class ZedPublisher(Node):
 
 
 
-        
-
-
-
     def publish_images(self):
+
+        """
+        Called every time the timer is triggered to publish images
+        Retrieves the latest rgb, depth, and point cloud frame from the Zed Camera
+        and publishes them
+        """
         # Grab an image
         if self.zed.grab(self.runtime_parameters) == sl.ERROR_CODE.SUCCESS:
             # A new image is available if grab() returns sl.ERROR_CODE.SUCCESS
@@ -98,6 +121,10 @@ class ZedPublisher(Node):
     
     
     def sl_mat_to_ros_image(self, zed_image: sl.Mat):
+        """
+        Convert a ZED Mat image to a ROS2 Image message
+        """
+
         # Convert sl.Mat to numpy array
         image_np = zed_image.get_data()
 
@@ -119,6 +146,11 @@ class ZedPublisher(Node):
          
     
     def zed_point_cloud_to_ros_point_cloud2(self, zed_point_cloud):
+        """
+        Convert a ZED point cloud to a ROS2 PointCloud2 message
+        Only sends xyz data for now
+        """
+
         # Initialize the PointCloud2 message
         ros_point_cloud = PointCloud2()
       #  ros_point_cloud.header.stamp = self.get_clock().now().to_msg()

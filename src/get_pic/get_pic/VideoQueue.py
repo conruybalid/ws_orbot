@@ -3,6 +3,10 @@ import threading
 import time
 
 class VideoStreamHandler:
+    """
+    Class to handle video stream from a camera
+    Continuously read frames from the camera and stores the latest frame
+    """
     def __init__(self, rtsp_url, gstreamer=False):
         self.rtsp_url = rtsp_url
         if not gstreamer:
