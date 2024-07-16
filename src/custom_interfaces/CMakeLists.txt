@@ -19,7 +19,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GetLocation.srv"
   "msg/ArmControl.msg"
   "action/MoveArm.action"
-  DEPENDENCIES sensor_msgs # Add packages that above messages depend on, in this case geometry_msgs for Sphere.msg
+  DEPENDENCIES geometry_msgs sensor_msgs
 )
 
 if(BUILD_TESTING)
