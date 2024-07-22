@@ -63,10 +63,10 @@ class GripperCommand:
 
         position = gripper_measure.finger[0].value
         finger.finger_identifier = 1
-        while position < 1.0:
+        while position < 0.98:
             gripper_measure = self.base.GetMeasuredGripperMovement(gripper_request)
             if len(gripper_measure.finger):
-                if gripper_measure.finger[0].value <= position - 0.008:
+                if gripper_measure.finger[0].value <= position - 0.01:
                     break
             else:
                 break
