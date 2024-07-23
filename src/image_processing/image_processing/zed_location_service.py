@@ -45,6 +45,7 @@ class ZedLocation(Node):
         self.zed_pc_sub = self.create_subscription(PointCloud2, 'zed_pointcloud_topic', self.zed_pointcloud_callback, 10)
         self.zed_pointcloud = None
         self.maskpublisher = self.create_publisher(Image, 'zed_mask_topic', 10)
+
         self.get_logger().info('Distance publisher node has been initialized')
         
 
@@ -54,10 +55,10 @@ class ZedLocation(Node):
 
     def zed_image_callback(self, msg):
         self.zed_image = CvBridge().imgmsg_to_cv2(msg)
-        self.get_logger().info('ZED Image received')
+        self.get_logger().debug('ZED Image received')
 
     def zed_pointcloud_callback(self, msg):
-        self.get_logger().info('ZED Point Cloud received')
+        self.get_logger().debug('ZED Point Cloud received')
         self.zed_pointcloud = self.ros_point_cloud2_to_zed_point_cloud(msg)
 
     def ros_point_cloud2_to_zed_point_cloud(self, ros_point_cloud):
@@ -121,14 +122,14 @@ class ZedLocation(Node):
 
                     x, y, z = self.zed_pointcloud[center_y, center_x]
 
-                    self.get_logger().info(f'point cloud: {x}, {y}, {z}')
+                    self.get_logger().debug(f'point cloud: {x}, {y}, {z}')
 
                     # # Convert the center coordinates to meters
                     x_distance = (-x + 509) / 1000
                     y_distance = (-y + 840) / 1000
                     z_distance = (z - 175) / 1000
 
-                    self.get_logger().info(f'x_distance: {x_distance}, y_distance: {y_distance}, z_distance: {z_distance}')
+                    self.get_logger().debug(f'x_distance: {x_distance}, y_distance: {y_distance}, z_distance: {z_distance}')
 
                     # print("Distance from left of the image (x-axis): {} meters".format(x_distance))
                     # print("Distance from top of the image (y-axis): {} meters".format(y_distance))
@@ -143,7 +144,7 @@ class ZedLocation(Node):
 
                     return response
                 else:
-                    self.get_logger().info("No red mask found. (Too Small)")
+                    self.get_logger().warn("No red mask found. (Too Small)")
                     response.apple_coordinates.x = 0.0
                     response.apple_coordinates.y = 0.0
                     response.apple_coordinates.z = 0.0
@@ -159,7 +160,7 @@ class ZedLocation(Node):
             self.maskpublisher.publish(mask_msg)
 
         else:
-            self.get_logger().info("Could not access the camera.")
+            self.get_logger().error("No Image from Camera")
             response.apple_coordinates.x = 0.0
             response.apple_coordinates.y = 0.0
             response.apple_coordinates.z = 0.0

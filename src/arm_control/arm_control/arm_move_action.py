@@ -145,7 +145,7 @@ class MoveArmServer(Node):
         try:
             success &= move_trajectory(base, base_cyclic, waypointsDefinition)
         except:
-            self.get_logger().info(f'Error in trajectory: {coordinates[0]}, {coordinates[1]}, {coordinates[2]}')
+            self.get_logger().error(f'Error in trajectory: {coordinates[0]}, {coordinates[1]}, {coordinates[2]}')
             goal_handle.abort()
             result.result = False
         
@@ -169,7 +169,7 @@ class MoveArmServer(Node):
             self.get_logger().info('Gripper closed')
 
         else:
-            self.get_logger().info('Invalid gripper state')
+            self.get_logger().warn('Invalid gripper state')
 
 
         # Check if the action was canceled

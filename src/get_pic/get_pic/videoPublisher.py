@@ -33,7 +33,6 @@ class VideoPublisher(Node):
         self.rgbpublisher_ = self.create_publisher(Image, 'image_topic', 10)
         self.depthpublisher_ = self.create_publisher(Image, 'depth_topic', 10)
         self.timer_ = self.create_timer(0.1, self.publish_images)
-        self.get_logger().info('Video publisher node has been initialized')
         
         # RTSP stream URL
         rtsp_url = "rtsp://192.168.1.10/color"
@@ -46,6 +45,8 @@ class VideoPublisher(Node):
 
         self.image_msg = Image()
         self.depth_msg = Image()
+
+        self.get_logger().info('Video publisher node has been initialized')
 
 
     def publish_images(self):
@@ -61,7 +62,7 @@ class VideoPublisher(Node):
             self.rgbpublisher_.publish(self.image_msg)
             #self.get_logger().info('Image published')
         else:
-            self.get_logger().info('Failed to read frame from RTSP rgb stream')
+            self.get_logger().warn('Failed to read frame from RTSP rgb stream')
 
         # Create an Image message and publish it
         # frame = self.depth_stream_handler.get_latest_frame()
@@ -84,7 +85,7 @@ def main(args=None):
             video_publisher.video_stream_handler.stop()
             video_publisher.depth_stream_handler.stop()
     else:    
-        video_publisher.get_logger().info("Failed to open RTSP stream, destroying node...")
+        video_publisher.get_logger().fatal("Failed to open RTSP stream, destroying node...")
     
     video_publisher.destroy_node()
     rclpy.shutdown()

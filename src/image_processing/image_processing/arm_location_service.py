@@ -41,13 +41,15 @@ class ImageProcessingService(Node):
 
         self.rgb_image = None
 
+        self.get_logger().info('Arm_Locate_Apple_Service has been Initialized')
+
     """
     CALLBACK FUNCTIONS
     """
 
     def image_callback(self, msg):
         self.rgb_image = CvBridge().imgmsg_to_cv2(msg)
-        #self.get_logger().info('Image received')
+        self.get_logger().debug('Image received')
 
     def process_image_callback(self, request, response):
         """
@@ -59,12 +61,12 @@ class ImageProcessingService(Node):
         failed_coordinates.y = 99.0
         failed_coordinates.z = 99.0
 
-        self.get_logger().info('Incoming Process request')
+        self.get_logger().info('Incoming Arm Process request')
         
         if self.rgb_image is not None:
             try:
                 largest_apple_index, apple_coordinates, mask_image = processImage(self.rgb_image)
-                self.get_logger().info('image processed successfully')
+                self.get_logger().info('Arm image processed successfully')
                 mask_msg = CvBridge().cv2_to_imgmsg(mask_image)
                 self.Masked_publisher.publish(mask_msg)
                 for coordinate in apple_coordinates:
@@ -80,12 +82,12 @@ class ImageProcessingService(Node):
                 return response
 
             except Exception as e:
-                self.get_logger().info('image processing failed: {}'.format(str(e)))
+                self.get_logger().error('image processing failed: {}'.format(str(e)))
                 response.error_status = 2
                 self.rgb_image = None
 
         else:
-            self.get_logger().info('no image available for processing')
+            self.get_logger().error('no image available for processing')
             response.error_status = 3
 
         num_apples = -1

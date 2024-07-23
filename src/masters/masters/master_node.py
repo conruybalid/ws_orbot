@@ -42,11 +42,11 @@ class MasterNode(Node):
 
         self.zed_client = self.create_client(GetLocation, 'zed_location_service')
         while not self.zed_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('zed_location_service not available, waiting again...')
+            self.get_logger().warn('zed_location_service not available, waiting again...')
 
         self.arm_client = self.create_client(GetLocation, 'Arm_Locate_Apple_Service')
         while not self.arm_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Arm_Locate_Apple_Service not available, waiting again...')
+            self.get_logger().warn('Arm_Locate_Apple_Service not available, waiting again...')
         
         self.distance = None
 
@@ -89,11 +89,11 @@ class MasterNode(Node):
         if error_code == 1:
             self.get_logger().info('No apples found')
         elif error_code == 2:
-            self.get_logger().info('Failed to process image')
+            self.get_logger().error('Failed to process image')
         elif error_code == 3:
-            self.get_logger().info('Service Node Failed to access camera')
+            self.get_logger().error('Service Node had no image to process')
         else:
-            self.get_logger().info('Unknown Error Code')
+            self.get_logger().error('Unknown Error Code')
         return
     
 
@@ -131,16 +131,16 @@ class MasterNode(Node):
 
         goal_handle = future.result()
         if not goal_handle.accepted:
-            self.get_logger().info('Move Goal rejected :(')
+            self.get_logger().error('Move Goal rejected :(')
             return False
 
-        self.get_logger().info(f'Move Goal sent: \n{goal_msg}')
+        self.get_logger().debug(f'Move Goal sent: \n{goal_msg}')
 
         result_future = goal_handle.get_result_async()
         #result_future.add_done_callback(self.get_result_callback)
         rclpy.spin_until_future_complete(self, result_future)
         result = result_future.result().result
-        self.get_logger().info(f'Move Result: {result.result}')
+        self.get_logger().debug(f'Move Result: {result.result}')
 
         
         return result.result
@@ -176,7 +176,7 @@ class MasterNode(Node):
         if (self.send_move_goal(self.format_move_goal(position=[x, y - 0.025, self.distance - 0.2], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))):
             self.get_logger().info('Moved to apple location')
         else:
-            self.get_logger().info('Failed to move to apple location')
+            self.get_logger().error('Failed to move to apple location')
             return False
 
         return True
@@ -223,7 +223,7 @@ class MasterNode(Node):
 
             # Publish Arm Movement
             self.send_move_goal(move_goal)
-            self.get_logger().info(f'moved {move_msg.position.x} in x, {move_msg.position.y} in y')
+            self.get_logger().debug(f'moved {move_msg.position.x} in x, {move_msg.position.y} in y')
         
         return True
     
@@ -240,7 +240,7 @@ class MasterNode(Node):
         this function can be used to reach out to the apple.
         """
 
-        self.get_logger().info('Reaching for Apple at absolute distance %f' % self.distance)
+        self.get_logger().debug('Reaching for Apple at absolute distance %f' % self.distance)
         arm_msg = ArmControl()
         arm_msg.position.x = 99.0
         arm_msg.position.y = 99.0
@@ -258,7 +258,7 @@ class MasterNode(Node):
         if self.send_move_goal(move_goal):
             return True
         else:
-            self.get_logger().info('Could not reach for apple')
+            self.get_logger().error('Could not reach for apple')
             return False
         
 
@@ -276,7 +276,7 @@ class MasterNode(Node):
             and self.send_move_goal(self.format_move_goal(angle=[0.0, 0.0, 100.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL))
             and self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, -0.2], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL))
             ):
-                self.get_logger().info('failed to perform pick apple movements')
+                self.get_logger().error('failed to perform pick apple movements')
             else:
                 self.get_logger().info('finished pick apple movements')
 
@@ -287,7 +287,7 @@ class MasterNode(Node):
             if not (
             self.send_move_goal(self.format_move_goal(position=[-0.3, 0.4, 0.0], angle=[0.0, 90.0, 180.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
             ):
-                self.get_logger().info('Failed to drop off apple')
+                self.get_logger().error('Failed to drop off apple')
                 self.send_move_goal(self.format_move_goal(gripper_state=1))
             else:
                 self.get_logger().info('Dropped off apple')
@@ -297,7 +297,7 @@ class MasterNode(Node):
             
         # If the user aborts the program, the gripper will open
         except KeyboardInterrupt:
-            self.get_logger().info('Abort, Opening Gripper')
+            self.get_logger().warn('Abort, Opening Gripper')
             self.send_move_goal(self.format_move_goal(gripper_state=1))
 
 
@@ -337,13 +337,13 @@ class MasterNode(Node):
                         self.grab_apple()
 
                 else:
-                    self.get_logger().info('No depth found \nPerfroming placeholder "reach for apple"')
+                    self.get_logger().warn('No depth found \nPerfroming placeholder "reach for apple"')
                     self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, 0.2]))
                     # Grab the Apple
                     self.grab_apple()
 
         except KeyboardInterrupt:
-            self.get_logger().info('Routine Aborted')
+            self.get_logger().warn('Routine Aborted')
 
 
         # Return to home position

@@ -93,12 +93,14 @@ class VideoSubscriber(Node):
 
         self.images = [black_image, black_image, black_image, black_image]
 
+        self.get_logger().info('Video subscriber node has been initialized')
+
     """
     CALLBACK FUNCTIONS
     """
 
     def arm_image_callback(self, msg):
-        #self.get_logger().info('Received an image')
+        self.get_logger().debug('Received an arm rgb image')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
         cv_image = self.Resize_to_screen(cv_image)
         self.images[0] = cv_image
@@ -106,17 +108,16 @@ class VideoSubscriber(Node):
         # cv2.waitKey(1)
 
     def depth_callback(self, msg):
-        #self.get_logger().info('Received a depth image')
+        self.get_logger().dbug('Received an arm depth image')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
         cv_image = self.Resize_to_screen(cv_image)
         # cv2.imshow('Depth', cv_image)
         # cv2.waitKey(1)
 
     def arm_mask_callback(self, msg):
-        #self.get_logger().info('Received an arm camera mask')
+        self.get_logger().debug('Received an arm camera mask')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
         cv_image = self.Resize_to_screen(cv_image)
-        #self.get_logger().info('Recieved Image Mask Shape: {}'.format(cv_image.shape))
         if len(cv_image.shape) < 3:
             self.images[1] = cv2.cvtColor(cv_image, cv2.COLOR_GRAY2RGB)
         else:
@@ -125,7 +126,7 @@ class VideoSubscriber(Node):
         # cv2.waitKey(1)
 
     def zed_image_callback(self, msg):
-        #self.get_logger().info('Received a zed image')
+        self.get_logger().debug('Received a zed rgb image')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
         cv_image = self.Resize_to_screen(cv_image)
         if cv_image.shape[2] > 3:
@@ -136,7 +137,7 @@ class VideoSubscriber(Node):
         # cv2.waitKey(1)
 
     def zed_mask_callback(self, msg):
-        #self.get_logger().info('Received a zed mask')
+        self.get_logger().debug('Received a zed mask')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
         cv_image = self.Resize_to_screen(cv_image)
         if len(cv_image.shape) < 3:
@@ -162,7 +163,7 @@ class VideoSubscriber(Node):
         try:
             get_monitors()
         except:
-            self.get_logger().info('No monitor detected')
+            self.get_logger().warn('No monitor detected')
             return
         top_image = np.hstack((self.images[0], self.images[1]))
         bottom_image = np.hstack((self.images[2], self.images[3]))

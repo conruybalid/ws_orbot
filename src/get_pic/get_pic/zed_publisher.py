@@ -38,7 +38,8 @@ class ZedPublisher(Node):
         self.depthpublisher_ = self.create_publisher(Image, 'zed_depth_topic', 10)
         self.pointcloutpublisher_ = self.create_publisher(PointCloud2, 'zed_pointcloud_topic', 10)
         self.timer_ = self.create_timer(0.1, self.publish_images)
-        self.get_logger().info('Video publisher node has been initialized')
+
+        self.get_logger().info('zed publisher node has been initialized')
 
         
         
@@ -64,7 +65,7 @@ class ZedPublisher(Node):
         # Open the camera
         err = self.zed.open(init_params)
         if err != sl.ERROR_CODE.SUCCESS:
-            print("Error {}, exit program".format(err)) # Display the error
+            self.get_logger().error("Error {}".format(err)) # Display the error
             
 
         self.get_logger().info('ZED camera has been initialized')
@@ -96,17 +97,17 @@ class ZedPublisher(Node):
             if self.image is not None:
                 image_msg = self.sl_mat_to_ros_image(self.image)
                 self.rgbpublisher_.publish(image_msg)
-                self.get_logger().info('Image published')
+                self.get_logger().debug('Image published')
             else:
-                self.get_logger().info('self.image is None')
+                self.get_logger().warn('self.image is None')
 
             # depth
             if self.depth is not None:
                 depth_msg = self.sl_mat_to_ros_image(self.depth)
                 self.depthpublisher_.publish(depth_msg)
-                self.get_logger().info('Depth published')
+                self.get_logger().debug('Depth published')
             else:
-                self.get_logger().info('self.depth is None')
+                self.get_logger().warn('self.depth is None')
 
             # point cloud    
             if self.point_cloud is not None:
@@ -115,9 +116,9 @@ class ZedPublisher(Node):
 
                 point_cloud_msg = self.zed_point_cloud_to_ros_point_cloud2(self.point_cloud)
                 self.pointcloutpublisher_.publish(point_cloud_msg)
-                self.get_logger().info('point cloud published')
+                self.get_logger().debug('point cloud published')
             else:
-                self.get_logger().info('self.point_cloud is None')
+                self.get_logger().warn('self.point_cloud is None')
     
     
     def sl_mat_to_ros_image(self, zed_image: sl.Mat):
@@ -141,7 +142,7 @@ class ZedPublisher(Node):
             # cv2.waitKey(1)
             ros_image_msg = bridge.cv2_to_imgmsg(image_np, "32FC1")
         else:
-            self.get_logger().info('Invalid image data type')
+            self.get_logger().error('Invalid image data type when converting to ROS Image message')
         return ros_image_msg
          
     

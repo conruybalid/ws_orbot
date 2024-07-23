@@ -54,25 +54,27 @@ class VideoSubscriber(Node):
         
         self.bridge = CvBridge()
 
+        self.get_logger().info('Zed subscriber node has been initialized')
+
     """
     CALLBACK FUNCTIONS
     """
 
     def image_callback(self, msg):
-        self.get_logger().info('Received a color image')
+        self.get_logger().debug('Received a color image')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
         # cv2.imshow('Color_Image', cv_image)
         # cv2.waitKey(1)
 
     def depth_callback(self, msg):
-        self.get_logger().info('Received a depth image')
+        self.get_logger().debug('Received a depth image')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
         cv_image = cv2.multiply(cv_image,255)
         # cv2.imshow('Depth_Image', cv_image)
         # cv2.waitKey(1)
 
     def pointcloud_callback(self, msg: PointCloud2):
-        self.get_logger().info('Received a pointcloud')
+        self.get_logger().debug('Received a pointcloud')
 
         # Convert PointCloud2 to array of points
         np_points = self.ros_point_cloud2_to_zed_point_cloud(msg)
