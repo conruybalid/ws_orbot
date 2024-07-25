@@ -5,6 +5,7 @@ from custom_interfaces.srv import GetLocation
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import PointCloud2
 
+from image_processing.AI_model import AI_model
 
 import cv2
 from cv_bridge import CvBridge
@@ -46,6 +47,8 @@ class ZedLocation(Node):
         self.zed_pointcloud = None
         self.maskpublisher = self.create_publisher(Image, 'zed_mask_topic', 10)
 
+        self.AI = AI_model()
+
         self.get_logger().info('Distance publisher node has been initialized')
         
 
@@ -84,6 +87,7 @@ class ZedLocation(Node):
 
 
     def process_image_callback(self,  request, response):
+
         """
         when called, applies a red mask to the rgb image and locates the apple in the image.
         If an apple is found, returns the location of the apple as reported in the point cloud.
@@ -92,33 +96,25 @@ class ZedLocation(Node):
         # Grab an image
         if self.zed_image is not None and self.zed_pointcloud is not None:
             
-            # Convert the image to HSV color space
-            hsv_image = cv2.cvtColor(self.zed_image, cv2.COLOR_BGR2HSV)
+            image = cv2.cvtColor(self.zed_image, cv2.COLOR_BGR2RGB)
+            pixels = self.AI.GetAppleCoordinates(image, confidence_threshold=0.7)
 
-            # Define the lower and upper bounds for the red color in HSV
-            lower_red = np.array([0, 100, 100])
-            upper_red = np.array([10, 255, 255])
-
-            # Create a mask for the red color
-            mask = cv2.inRange(hsv_image, lower_red, upper_red)
-
-            # Find the contours of the red mask
-            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-            # Create Viewable Mask
-            viewing_mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
-            for contour in contours:
-                x, y, w, h = cv2.boundingRect(contour)        
-                viewing_mask = cv2.rectangle(viewing_mask, (x, y), (x + w, y + h), (255, 0, 0), 2)
-
-
+            viewing_mask = self.zed_image
+            for i, (x1_p, y1_p, x2_p, y2_p) in enumerate(pixels):
+                if i == 0:
+                    viewing_mask = cv2.rectangle(viewing_mask, (x1_p, y1_p), (x2_p, y2_p), (0, 0, 255), 5)
+                else:
+                    viewing_mask = cv2.rectangle(viewing_mask, (x1_p, y1_p), (x2_p, y2_p), (255, 0, 0), 5)
+            
+            mask_msg = CvBridge().cv2_to_imgmsg(viewing_mask)
+            self.maskpublisher.publish(mask_msg)
+            
             # Find the center of the largest contour
-            if len(contours) > 0:
-                largest_contour = max(contours, key=cv2.contourArea)
-                M = cv2.moments(largest_contour)
-                if M["m00"] > 0:
-                    center_x = int(M["m10"] / M["m00"])
-                    center_y = int(M["m01"] / M["m00"])
+            if len(pixels) > 0:
+                    x1_p, y1_p, x2_p, y2_p = pixels[0]
+
+                    center_x = int((x1_p + x2_p) / 2)
+                    center_y = int((y1_p + y2_p) / 2)
 
                     x, y, z = self.zed_pointcloud[center_y, center_x]
 
@@ -136,28 +132,21 @@ class ZedLocation(Node):
                     response.apple_coordinates.x = x_distance
                     response.apple_coordinates.y = y_distance
                     response.apple_coordinates.z = z_distance
-
-                    x, y, w, h = cv2.boundingRect(largest_contour)        
-                    viewing_mask = cv2.rectangle(viewing_mask, (x, y), (x + w, y + h), (0, 0, 255), 2)
+                    
+                    viewing_mask = self.zed_image[:, :, :3]
+                    viewing_mask = cv2.rectangle(self.zed_image, (x1_p, y1_p), (x2_p, y2_p), (0, 0, 255), 5)
                     mask_msg = CvBridge().cv2_to_imgmsg(viewing_mask)
                     self.maskpublisher.publish(mask_msg)
 
                     return response
-                else:
-                    self.get_logger().warn("No red mask found. (Too Small)")
-                    response.apple_coordinates.x = 0.0
-                    response.apple_coordinates.y = 0.0
-                    response.apple_coordinates.z = 0.0
 
             else:
-                self.get_logger().info("No red mask found.")
+                self.get_logger().info("No apples found.")
                 response.apple_coordinates.x = 0.0
                 response.apple_coordinates.y = 0.0
                 response.apple_coordinates.z = 0.0
                 response.error_status = 1
 
-            mask_msg = CvBridge().cv2_to_imgmsg(mask)
-            self.maskpublisher.publish(mask_msg)
 
         else:
             self.get_logger().error("No Image from Camera")

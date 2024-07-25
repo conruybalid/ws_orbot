@@ -142,6 +142,8 @@ class VideoSubscriber(Node):
         cv_image = self.Resize_to_screen(cv_image)
         if len(cv_image.shape) < 3:
             self.images[3] = cv2.cvtColor(cv_image, cv2.COLOR_GRAY2RGB)
+        elif cv_image.shape[2] > 3:
+            self.images[3] = cv_image[:, :, :3]
         else:
             self.images[3] = cv_image 
         # cv2.imshow('Masked_Zed_Image', cv_image)
