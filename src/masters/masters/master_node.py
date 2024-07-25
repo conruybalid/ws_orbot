@@ -289,6 +289,7 @@ class MasterNode(Node):
             ):
                 self.get_logger().error('Failed to drop off apple')
                 self.send_move_goal(self.format_move_goal(gripper_state=1))
+                time.sleep(1)
             else:
                 self.get_logger().info('Dropped off apple')
                 self.send_move_goal(self.format_move_goal(position=[0.0, 0.5, 0.5], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))

@@ -155,6 +155,8 @@ class ZedLocation(Node):
             response.apple_coordinates.z = 0.0
             response.error_status = 3
 
+        self.zed_image = None
+        self.zed_pointcloud = None
 
         return response
     
