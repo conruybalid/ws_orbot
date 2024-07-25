@@ -125,8 +125,8 @@ class ZedLocation(Node):
                     self.get_logger().debug(f'point cloud: {x}, {y}, {z}')
 
                     # # Convert the center coordinates to meters
-                    x_distance = (-x + 509) / 1000
-                    y_distance = (-y + 840) / 1000
+                    x_distance = (-x - 361) / 1000
+                    y_distance = (-y + 785) / 1000
                     z_distance = (z - 175) / 1000
 
                     self.get_logger().debug(f'x_distance: {x_distance}, y_distance: {y_distance}, z_distance: {z_distance}')
