@@ -9,6 +9,8 @@ from cv_bridge import CvBridge
 
 from image_processing.ImageProcess import processImage
 
+from image_processing.AI_model import AI_model
+
 
 
 class ImageProcessingService(Node):
@@ -41,6 +43,8 @@ class ImageProcessingService(Node):
 
         self.rgb_image = None
 
+        self.AI = AI_model()
+
         self.get_logger().info('Arm_Locate_Apple_Service has been Initialized')
 
     """
@@ -65,15 +69,31 @@ class ImageProcessingService(Node):
         
         if self.rgb_image is not None:
             try:
-                largest_apple_index, apple_coordinates, mask_image = processImage(self.rgb_image)
+                image = image = cv2.cvtColor(self.rgb_image, cv2.COLOR_BGR2RGB)
+                pixels = self.AI.GetAppleCoordinates(image, confidence_threshold=0.85)
                 self.get_logger().info('Arm image processed successfully')
-                mask_msg = CvBridge().cv2_to_imgmsg(mask_image)
+
+                viewing_mask = self.rgb_image
+                for i, (x1_p, y1_p, x2_p, y2_p) in enumerate(pixels):
+                    if i == 0:
+                        viewing_mask = cv2.rectangle(viewing_mask, (x1_p, y1_p), (x2_p, y2_p), (0, 0, 255), 5)
+                    else:
+                        viewing_mask = cv2.rectangle(viewing_mask, (x1_p, y1_p), (x2_p, y2_p), (255, 0, 0), 5)
+                
+                mask_msg = CvBridge().cv2_to_imgmsg(viewing_mask)
                 self.Masked_publisher.publish(mask_msg)
-                for coordinate in apple_coordinates:
-                    coordinate.x, coordinate.y = self.pixel_scale(coordinate.x, coordinate.y)
-                if apple_coordinates is not None and len(apple_coordinates) > 0:
-                    response.apple_coordinates = apple_coordinates[largest_apple_index]
-                    response.error_status = 0
+
+                if len(pixels) > 0:
+                        x1_p, y1_p, x2_p, y2_p = pixels[0]
+
+                        center_x = int((x1_p + x2_p) / 2)
+                        center_y = int((y1_p + y2_p) / 2)
+
+                        response.error_status = 0
+
+                        response.apple_coordinates.x, response.apple_coordinates.y = self.pixel_scale(center_x, center_y)
+                        response.apple_coordinates.z = 0.0
+
                 else:
                     response.apple_coordinates = failed_coordinates
                     response.error_status = 1
