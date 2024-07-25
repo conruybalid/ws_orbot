@@ -87,6 +87,7 @@ class ZedLocation(Node):
 
 
     def process_image_callback(self,  request, response):
+
         """
         when called, applies a red mask to the rgb image and locates the apple in the image.
         If an apple is found, returns the location of the apple as reported in the point cloud.
@@ -95,22 +96,33 @@ class ZedLocation(Node):
         # Grab an image
         if self.zed_image is not None and self.zed_pointcloud is not None:
             
-            pixels = self.AI.GetAppleCoordinates(self.zed_image, confidence_threshold=0.5)
+            image = cv2.cvtColor(self.zed_image, cv2.COLOR_BGR2RGB)
+            pixels = self.AI.GetAppleCoordinates(image, confidence_threshold=0.7)
+
+            viewing_mask = self.zed_image
+            for i, (x1_p, y1_p, x2_p, y2_p) in enumerate(pixels):
+                if i == 0:
+                    viewing_mask = cv2.rectangle(viewing_mask, (x1_p, y1_p), (x2_p, y2_p), (0, 0, 255), 5)
+                else:
+                    viewing_mask = cv2.rectangle(viewing_mask, (x1_p, y1_p), (x2_p, y2_p), (255, 0, 0), 5)
+            
+            mask_msg = CvBridge().cv2_to_imgmsg(viewing_mask)
+            self.maskpublisher.publish(mask_msg)
             
             # Find the center of the largest contour
             if len(pixels) > 0:
                     x1_p, y1_p, x2_p, y2_p = pixels[0]
 
-                    center_x = (x1_p, x2_p) / 2
-                    center_y = (y1_p, y2_p) / 2
+                    center_x = int((x1_p + x2_p) / 2)
+                    center_y = int((y1_p + y2_p) / 2)
 
                     x, y, z = self.zed_pointcloud[center_y, center_x]
 
                     self.get_logger().debug(f'point cloud: {x}, {y}, {z}')
 
                     # # Convert the center coordinates to meters
-                    x_distance = (-x + 509) / 1000
-                    y_distance = (-y + 840) / 1000
+                    x_distance = (-x - 361) / 1000
+                    y_distance = (-y + 785) / 1000
                     z_distance = (z - 175) / 1000
 
                     self.get_logger().debug(f'x_distance: {x_distance}, y_distance: {y_distance}, z_distance: {z_distance}')
@@ -120,8 +132,9 @@ class ZedLocation(Node):
                     response.apple_coordinates.x = x_distance
                     response.apple_coordinates.y = y_distance
                     response.apple_coordinates.z = z_distance
-        
-                    viewing_mask = cv2.rectangle(self.zed_image, (x1_p, y1_p), (x2_p, y2_p), (0, 0, 255), 2)
+                    
+                    viewing_mask = self.zed_image[:, :, :3]
+                    viewing_mask = cv2.rectangle(self.zed_image, (x1_p, y1_p), (x2_p, y2_p), (0, 0, 255), 5)
                     mask_msg = CvBridge().cv2_to_imgmsg(viewing_mask)
                     self.maskpublisher.publish(mask_msg)
 
@@ -134,8 +147,6 @@ class ZedLocation(Node):
                 response.apple_coordinates.z = 0.0
                 response.error_status = 1
 
-            mask_msg = CvBridge().cv2_to_imgmsg(self.zed_image)
-            self.maskpublisher.publish(mask_msg)
 
         else:
             self.get_logger().error("No Image from Camera")
