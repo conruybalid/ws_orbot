@@ -1,0 +1,15 @@
+Torch 2.0.0
+
+pip uninstall torch
+pip uninstall torchvision
+
+export TORCH_INSTALL=https://developer.download.nvidia.cn/compute/redist/jp/v511/pytorch/torch-2.0.0+nv23.05-cp38-cp38-linux_aarch64.whl
+
+python3 -m pip install --no-cache-dir $TORCH_INSTALL
+
+TorchVision 0.15.1
+
+cd ~/vision/
+git checkout v0.15.1
+
+python3 setup.py install

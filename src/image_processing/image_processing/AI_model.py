@@ -2,7 +2,6 @@ import torch
 import cv2
 import numpy as np
 from typing import List, Tuple
-import yaml
 
 import sys
 
@@ -17,7 +16,7 @@ Then, an image can be passed to the model to get the coordinates of the apples i
 
 
 class AI_model:
-    def __init__(self, model_path='./src/image_processing/resource/best.pt'):
+    def __init__(self, model_path='./src/image_processing/resource/Jetson10EpochBest.pt'):
         self.model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path)
 
     def GetAppleCoordinates(self, image: np.ndarray, confidence_threshold=0.5):
