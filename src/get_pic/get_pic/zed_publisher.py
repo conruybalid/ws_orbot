@@ -112,7 +112,7 @@ class ZedPublisher(Node):
             # point cloud    
             if self.point_cloud is not None:
                 # print point cloud data at 100, 100
-                print(self.point_cloud.get_value(100, 100))
+                #print(self.point_cloud.get_value(100, 100))
 
                 point_cloud_msg = self.zed_point_cloud_to_ros_point_cloud2(self.point_cloud)
                 self.pointcloutpublisher_.publish(point_cloud_msg)
