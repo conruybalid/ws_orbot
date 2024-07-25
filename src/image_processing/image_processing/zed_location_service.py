@@ -99,7 +99,10 @@ class ZedLocation(Node):
             
             # Find the center of the largest contour
             if len(pixels) > 0:
-                    center_x, center_y = pixels[0]
+                    x1_p, y1_p, x2_p, y2_p = pixels[0]
+
+                    center_x = (x1_p, x2_p) / 2
+                    center_y = (y1_p, y2_p) / 2
 
                     x, y, z = self.zed_pointcloud[center_y, center_x]
 
@@ -117,23 +120,22 @@ class ZedLocation(Node):
                     response.apple_coordinates.x = x_distance
                     response.apple_coordinates.y = y_distance
                     response.apple_coordinates.z = z_distance
-
-                    # x, y, w, h = cv2.boundingRect(largest_contour)        
-                    # viewing_mask = cv2.rectangle(viewing_mask, (x, y), (x + w, y + h), (0, 0, 255), 2)
-                    # mask_msg = CvBridge().cv2_to_imgmsg(viewing_mask)
-                    # self.maskpublisher.publish(mask_msg)
+        
+                    viewing_mask = cv2.rectangle(self.zed_image, (x1_p, y1_p), (x2_p, y2_p), (0, 0, 255), 2)
+                    mask_msg = CvBridge().cv2_to_imgmsg(viewing_mask)
+                    self.maskpublisher.publish(mask_msg)
 
                     return response
 
             else:
-                self.get_logger().info("No red mask found.")
+                self.get_logger().info("No apples found.")
                 response.apple_coordinates.x = 0.0
                 response.apple_coordinates.y = 0.0
                 response.apple_coordinates.z = 0.0
                 response.error_status = 1
 
-            # mask_msg = CvBridge().cv2_to_imgmsg(mask)
-            # self.maskpublisher.publish(mask_msg)
+            mask_msg = CvBridge().cv2_to_imgmsg(self.zed_image)
+            self.maskpublisher.publish(mask_msg)
 
         else:
             self.get_logger().error("No Image from Camera")
