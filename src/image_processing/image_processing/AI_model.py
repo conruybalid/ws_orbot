@@ -21,7 +21,8 @@ class AI_model:
 
     def GetAppleCoordinates(self, image: np.ndarray, confidence_threshold=0.5):
         """
-        This function takes an image as input and return a list of tuples containing [x, y, confidence] of the detected apples
+        This function takes an image as input and return a list of tuples containing [x, y]
+          sorted by confidence of the detected apples
         """
         results = self.model(image)
 
@@ -31,9 +32,11 @@ class AI_model:
                 x_center = (box[0].item() + box[2].item()) / 2 # x = (x1 + x2) / 2
                 y_center = (box[1].item() + box[3].item()) / 2 # y = (y1 + y2) / 2
                 apple_pixels.append((x_center, y_center, conf.item()))
-        
-        return apple_pixels # List of tuples containing [x, y, confidence]
-        
+
+        apple_pixels.sort(key=lambda x: x[2], reverse=True)
+        apple_coordinates = [(x, y) for x, y, _ in apple_pixels]
+
+        return apple_coordinates
     
 
 def main():
