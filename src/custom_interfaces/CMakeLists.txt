@@ -18,6 +18,7 @@ find_package(sensor_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GetLocation.srv"
   "msg/ArmControl.msg"
+  "msg/Tank.msg"
   "action/MoveArm.action"
   DEPENDENCIES geometry_msgs sensor_msgs
 )
