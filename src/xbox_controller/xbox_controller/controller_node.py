@@ -9,7 +9,21 @@ def map_value(value, in_min, in_max, out_min, out_max):
     return int((value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)
 
 class XboxPublisher(Node):
+    """
+    Publisher node that takes in xbox controller inputs
 
+    This class gets inputs from the xbox controller (wired or bluetooth)
+    Then it converts the joystick inputs into valid tank commands
+    If the A button is pressed, manual_control will be toggled 
+    and the node will publish the tank commands
+
+    Attributes:
+        publisher_ (Publisher): The publisher instance for the Tank message.
+        manual_control (bool): The state of manual control.
+        left_speed (int): The speed of the left motor.
+        right_speed (int): The speed of the right motor
+    
+    """
     def __init__(self):
         super().__init__('xbox_publisher')
         self.publisher_ = self.create_publisher(Tank, 'move_tank_commands', 10)

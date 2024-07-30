@@ -15,8 +15,25 @@
 
 using namespace std::chrono_literals;
 
-/* This example creates a subclass of Node and uses std::bind() to register a
-* member function as a callback from the timer. */
+/*
+This Class is a subscriber node that listens to the topic "move_tank_commands"
+and sends the commands to the Roboteq motor controller.
+
+Arguments:
+    input_port: string
+        The port to which the Roboteq motor controller is connected to.
+        Example: "/dev/ttyACM1"
+
+Attributes:
+    subsciber: rclcpp::Subscription<custom_interfaces::msg::Tank>::SharedPtr
+        The subscriber object that listens to the topic "move_tank_commands".
+    device_: RoboteqDevice
+        The Roboteq motor controller object.
+    port: string
+        The port to which the Roboteq motor controller is connected to.
+
+*/
+
 
 class MoveTank : public rclcpp::Node
 {
