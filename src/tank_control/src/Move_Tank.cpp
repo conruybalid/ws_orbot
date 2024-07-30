@@ -32,13 +32,13 @@ class MoveTank : public rclcpp::Node
 
         if (status != RQ_SUCCESS)
         {
-            cout << "Error connecting to device: " << status << "." << endl;
+            RCLCPP_ERROR(this->get_logger(), "Unable to connect to device, status: %d", status);
         }
 
         // Set to digital input
         cout<<"- SetConfig(_DINA, 1, 1)...";
         if((status = device_.SetConfig(_DINA, 1, 1)) != RQ_SUCCESS){
-            cout<<"failed --> "<<status<<endl;
+            RCLCPP_ERROR(this->get_logger(), "- SetConfig(_DINA, 1, 1)...failed --> %d", status);
             if (status == 3){
                 cout << "Error occurred while transmitting data to device" << endl;
             }
@@ -69,6 +69,7 @@ class MoveTank : public rclcpp::Node
       if (msg->right_speed == 0){
         cout<<"- SetCommand(_MS, 1)...";
         if((status = device_.SetCommand(_MS, 1)) != RQ_SUCCESS) {
+            RCLCPP_ERROR(this->get_logger(), "- SetCommand(_MS, 1)...failed --> %d", status);
             cout<<"failed --> "<<status<<endl;
             if (status == 3){
                 cout << "Error occurred while transmitting data to device" << endl;
@@ -80,8 +81,10 @@ class MoveTank : public rclcpp::Node
         
       else{
         cout<<"- SetCommand(_GO, 1, "<< msg->right_speed <<")...";
-        if((status = device_.SetCommand(_GO, 1, msg->right_speed)) != RQ_SUCCESS)
+        if((status = device_.SetCommand(_GO, 1, msg->right_speed)) != RQ_SUCCESS){
+            RCLCPP_ERROR(this->get_logger(), "- SetCommand(_GO, 1, %d)...failed --> %d", msg->right_speed, status);        
             cout<<"failed --> "<<status<<endl;
+        }
         else
             cout<<"succeeded."<<endl;
       }
@@ -92,6 +95,7 @@ class MoveTank : public rclcpp::Node
       if (msg->left_speed == 0){
         cout<<"- SetCommand(_MS, 2)...";
         if((status = device_.SetCommand(_MS, 2)) != RQ_SUCCESS) {
+            RCLCPP_ERROR(this->get_logger(), "- SetCommand(_MS, 2)...failed --> %d", status);
             cout<<"failed --> "<<status<<endl;
             if (status == 3){
                 cout << "Error occurred while transmitting data to device" << endl;
@@ -103,8 +107,10 @@ class MoveTank : public rclcpp::Node
         
       else{
         cout<<"- SetCommand(_GO, 2, "<< msg->left_speed <<")...";
-        if((status = device_.SetCommand(_GO, 2, msg->left_speed)) != RQ_SUCCESS)
+        if((status = device_.SetCommand(_GO, 2, msg->left_speed)) != RQ_SUCCESS){
+            RCLCPP_ERROR(this->get_logger(), "- SetCommand(_GO, 2, %d)...failed --> %d", msg->right_speed, status);        
             cout<<"failed --> "<<status<<endl;
+        }
         else
             cout<<"succeeded."<<endl;
       }

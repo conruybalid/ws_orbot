@@ -31,6 +31,7 @@ class XboxPublisher(Node):
             if event.ev_type == 'Key':
                 if event.code == 'BTN_SOUTH' and event.state == 1:
                     self.manual_control = not self.manual_control
+                    self.get_logger().info(f"Manual Control: {self.manual_control}")  
             if event.ev_type == 'Absolute':
                 if event.code == 'ABS_Y':
                     self.left_speed = map_value(event.state, -32768, 32767, 1000, -1000)

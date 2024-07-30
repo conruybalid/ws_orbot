@@ -50,7 +50,7 @@ def generate_launch_description():
         Node(
             package='xbox_controller',
             executable='controller_node',
-            arguments=['--ros-args', '--log-level', 'WARN']
+            arguments=['--ros-args', '--log-level', 'INFO']
         ),
     
     ])
