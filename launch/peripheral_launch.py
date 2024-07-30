@@ -42,5 +42,15 @@ def generate_launch_description():
             arguments=['--ros-args', '--log-level', 'INFO']
 
         ),
+        Node(
+            package='tank_control',
+            executable='move_tank',
+            arguments=['--ros-args', '--log-level', 'WARN']
+        ),
+        Node(
+            package='xbox_controller',
+            executable='controller_node',
+            arguments=['--ros-args', '--log-level', 'WARN']
+        ),
     
     ])
