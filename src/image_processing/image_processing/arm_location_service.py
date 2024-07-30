@@ -38,7 +38,8 @@ class ImageProcessingService(Node):
     def __init__(self):
         super().__init__('Arm_Locate_Apple_Service')
         self.locate_apple_service = self.create_service(GetLocation, 'Arm_Locate_Apple_Service', self.process_image_callback)
-        self.arm_rgb_sub = self.create_subscription(Image, 'image_topic', self.image_callback, 10)
+        self.arm_rgb_sub = self.create_subscription(Image, 'camera/color/image_raw', self.image_callback, 10)
+        self.arm_depth_sub = self.create_subscription(Image, 'camera/depth/image_raw', self.depth_image_callback, 10)
         self.Masked_publisher = self.create_publisher(Image, 'masked_image_topic', 10)
 
         self.rgb_image = None
@@ -54,6 +55,10 @@ class ImageProcessingService(Node):
     def image_callback(self, msg):
         self.rgb_image = CvBridge().imgmsg_to_cv2(msg)
         self.get_logger().debug('Image received')
+
+    def depth_image_callback(self, msg):
+        self.depth_image = CvBridge().imgmsg_to_cv2(msg, desired_encoding='passthrough')
+        self.get_logger().debug('Depth image received')
 
     def process_image_callback(self, request, response):
         """
@@ -92,7 +97,7 @@ class ImageProcessingService(Node):
                         response.error_status = 0
 
                         response.apple_coordinates.x, response.apple_coordinates.y = self.pixel_scale(center_x, center_y)
-                        response.apple_coordinates.z = 0.0
+                        response.apple_coordinates.z = self.depth_image[center_y, center_x]
 
                 else:
                     response.apple_coordinates = failed_coordinates

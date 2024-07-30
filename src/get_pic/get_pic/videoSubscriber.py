@@ -35,7 +35,7 @@ class VideoSubscriber(Node):
         super().__init__('video_subscriber')
         self.arm_rgb_sub = self.create_subscription(
             Image,
-            'image_topic',
+            'camera/color/image_raw',
             self.arm_image_callback,
             10
         )
@@ -43,7 +43,7 @@ class VideoSubscriber(Node):
 
         self.arm_depth_sub = self.create_subscription(
             Image,
-            'depth_topic',
+            'camera/depth/image_raw',
             self.depth_callback,
             10
         )
@@ -102,17 +102,19 @@ class VideoSubscriber(Node):
     def arm_image_callback(self, msg):
         self.get_logger().debug('Received an arm rgb image')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
+        cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
         cv_image = self.Resize_to_screen(cv_image)
         self.images[0] = cv_image
         # cv2.imshow('Image', cv_image)
         # cv2.waitKey(1)
 
     def depth_callback(self, msg):
-        self.get_logger().dbug('Received an arm depth image')
-        cv_image = self.bridge.imgmsg_to_cv2(msg)
+        self.get_logger().debug('Received an arm depth image')
+        cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
+        cv_image = cv2.applyColorMap(cv2.convertScaleAbs(cv_image, alpha=0.02), cv2.COLORMAP_JET)
         cv_image = self.Resize_to_screen(cv_image)
-        # cv2.imshow('Depth', cv_image)
-        # cv2.waitKey(1)
+        cv2.imshow('Depth', cv_image)
+        cv2.waitKey(1)
 
     def arm_mask_callback(self, msg):
         self.get_logger().debug('Received an arm camera mask')
