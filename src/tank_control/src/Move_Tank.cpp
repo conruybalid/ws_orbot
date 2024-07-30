@@ -22,12 +22,10 @@ class MoveTank : public rclcpp::Node
 {
   public:
     MoveTank(string input_port)
-    : Node("move_tank"), count_(0), device_()
+    : Node("move_tank"), device_()
     {
       subscriber = this->create_subscription<custom_interfaces::msg::Tank>(
-      "move_commands", 10, std::bind(&MoveTank::command_callback, this, std::placeholders::_1));
-      timer_ = this->create_wall_timer(
-      1s, std::bind(&MoveTank::timer_callback, this));
+      "move_tank_commands", 10, std::bind(&MoveTank::command_callback, this, std::placeholders::_1));
 
         port = input_port;
         int status = device_.Connect(port);
@@ -58,13 +56,6 @@ class MoveTank : public rclcpp::Node
     RoboteqDevice device_;
     string port;
 
-    void timer_callback()
-    {
-
-    }
-    rclcpp::TimerBase::SharedPtr timer_;
-    size_t count_;
-
     void command_callback(const custom_interfaces::msg::Tank::SharedPtr msg)
     {
       int status = device_.Connect(port);
@@ -74,7 +65,7 @@ class MoveTank : public rclcpp::Node
             cout << "Error connecting to device: " << status << "." << endl;
         }
 
-      RCLCPP_INFO(this->get_logger(), "I heard: Right: '%d', Left:'%d'", msg->right_speed, msg->left_speed);
+      RCLCPP_DEBUG(this->get_logger(), "I heard: Right: '%d', Left:'%d'", msg->right_speed, msg->left_speed);
       if (msg->right_speed == 0){
         cout<<"- SetCommand(_MS, 1)...";
         if((status = device_.SetCommand(_MS, 1)) != RQ_SUCCESS) {
