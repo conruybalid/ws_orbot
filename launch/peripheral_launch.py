@@ -1,9 +1,19 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import SetEnvironmentVariable
+from launch.actions import SetEnvironmentVariable, IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+
+import os
+from ament_index_python.packages import get_package_share_directory
+
 
 
 def generate_launch_description():
+    kinova_vision_launch_file = os.path.join(
+        get_package_share_directory('kinova_vision'),
+        'launch',
+        'kinova_vision.launch.py'
+    )
     return LaunchDescription([
         SetEnvironmentVariable('RCUTILS_LOGGING_MIN_SEVERITY_LEVEL', 'WARN'),
         Node(
@@ -16,6 +26,11 @@ def generate_launch_description():
             executable='video_subscriber',
             arguments=['--ros-args', '--log-level', 'INFO']
 
+        ),
+
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(kinova_vision_launch_file),
+            launch_arguments={'launch_color': 'false'}.items()
         ),
 
         Node(

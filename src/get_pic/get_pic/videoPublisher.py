@@ -31,7 +31,7 @@ class VideoPublisher(Node):
     def __init__(self):
         super().__init__('video_publisher')
         self.rgbpublisher_ = self.create_publisher(Image, 'image_topic', 10)
-        self.depthpublisher_ = self.create_publisher(Image, 'depth_topic', 10)
+
         self.timer_ = self.create_timer(0.1, self.publish_images)
         
         # RTSP stream URL
@@ -39,7 +39,13 @@ class VideoPublisher(Node):
         depth_url = 'rtsp://192.168.1.10/depth'
         # Create a VideoStream object
         self.video_stream_handler = VideoStreamHandler(rtsp_url)
-        self.depth_stream_handler = VideoStreamHandler(depth_url, gstreamer=True)
+        i = 0
+        while not self.video_stream_handler.cap.isOpened():
+            self.get_logger().error(f'Failed to initialize video stream handler: attempt {i}')
+            self.video_stream_handler = None
+            i += 1
+            self.video_stream_handler = VideoStreamHandler(rtsp_url)
+            
 
         self.get_logger().info('rtsp has been initialized')
 
@@ -64,15 +70,7 @@ class VideoPublisher(Node):
         else:
             self.get_logger().warn('Failed to read frame from RTSP rgb stream')
 
-        # Create an Image message and publish it
-        # frame = self.depth_stream_handler.get_latest_frame()
-        # if frame is not None:
-        #     self.depth_msg = CvBridge().cv2_to_imgmsg(frame)
-        #     self.depthpublisher_.publish(self.depth_msg)
-        #     self.get_logger().info('Depth published')
-        # else:
-        #     self.get_logger().info('Failed to read frame from RTSP depth stream')
-        
+         
 
 def main(args=None):
     rclpy.init(args=args)
@@ -83,7 +81,6 @@ def main(args=None):
             rclpy.spin(video_publisher)
         except KeyboardInterrupt:
             video_publisher.video_stream_handler.stop()
-            video_publisher.depth_stream_handler.stop()
     else:    
         video_publisher.get_logger().fatal("Failed to open RTSP stream, destroying node...")
     
