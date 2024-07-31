@@ -1,3 +1,14 @@
+# Forked Repo of ROS2 Kinova Vision module package
+
+## Usage
+
+In the case that there are any useful updates to the original repostitory:
+In ~/ws_orbot/src/ros2_kortex_vision
+```terminal
+git fetch upstream
+git merge upstream/ros2
+```
+
 # Kinova Vision module package
 
 ## Overview
