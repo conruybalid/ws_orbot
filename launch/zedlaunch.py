@@ -5,16 +5,7 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='get_pic',
-            executable='video_publisher',
-        ),
-        Node(
-            package='get_pic',
             executable='video_subscriber',
-        ),
-
-        Node(
-            package='image_processing',
-            executable='arm_location_service',
         ),
 
         Node(
@@ -25,5 +16,6 @@ def generate_launch_description():
         Node(
             package='image_processing',
             executable='zed_location_service',
+            arguments=['--ros-args', '--log-level', 'INFO']
         ),
     ])
