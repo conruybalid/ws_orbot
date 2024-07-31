@@ -24,6 +24,7 @@ setup(
             'video_subscriber = get_pic.videoSubscriber:main',
             'zed_subscriber = get_pic.zed_subscriber:main',
             'zed_publisher = get_pic.zed_publisher:main',
+            'kortex_vision_subscriber = get_pic.kortex_vision_subscriber:main',
         ],
     },
 )
