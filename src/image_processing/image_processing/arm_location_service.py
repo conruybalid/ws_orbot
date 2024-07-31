@@ -11,7 +11,10 @@ from image_processing.ImageProcess import processImage
 
 from image_processing.AI_model import AI_model
 
-
+SCALE_X = 480/1280
+OFFSET_X = 20
+SCALE_Y = 270/720
+OFFSET_Y = 50
 
 class ImageProcessingService(Node):
     """
@@ -38,11 +41,12 @@ class ImageProcessingService(Node):
     def __init__(self):
         super().__init__('Arm_Locate_Apple_Service')
         self.locate_apple_service = self.create_service(GetLocation, 'Arm_Locate_Apple_Service', self.process_image_callback)
-        self.arm_rgb_sub = self.create_subscription(Image, 'camera/color/image_raw', self.image_callback, 10)
+        self.arm_rgb_sub = self.create_subscription(Image, 'image_topic', self.image_callback, 10)
         self.arm_depth_sub = self.create_subscription(Image, 'camera/depth/image_raw', self.depth_image_callback, 10)
         self.Masked_publisher = self.create_publisher(Image, 'masked_image_topic', 10)
 
         self.rgb_image = None
+        self.depth_image = None
 
         self.AI = AI_model()
 
@@ -72,7 +76,7 @@ class ImageProcessingService(Node):
 
         self.get_logger().info('Incoming Arm Process request')
         
-        if self.rgb_image is not None:
+        if self.rgb_image is not None and self.depth_image is not None:
             try:
                 image = image = cv2.cvtColor(self.rgb_image, cv2.COLOR_BGR2RGB)
                 pixels = self.AI.GetAppleCoordinates(image, confidence_threshold=0.85)
@@ -97,7 +101,11 @@ class ImageProcessingService(Node):
                         response.error_status = 0
 
                         response.apple_coordinates.x, response.apple_coordinates.y = self.pixel_scale(center_x, center_y)
-                        response.apple_coordinates.z = self.depth_image[center_y, center_x]
+                        print(self.depth_image.shape)
+                        print(self.rgb_image.shape)
+                        print(center_y * SCALE_Y + OFFSET_Y, center_x * SCALE_X + OFFSET_X)
+
+                        response.apple_coordinates.z = float(self.depth_image[int(center_y * SCALE_Y + OFFSET_Y), int(center_x * SCALE_X + OFFSET_X)]) / 1000.0
 
                 else:
                     response.apple_coordinates = failed_coordinates

@@ -35,7 +35,8 @@ class VideoSubscriber(Node):
         super().__init__('video_subscriber')
         self.arm_rgb_sub = self.create_subscription(
             Image,
-            'camera/color/image_raw',
+            #'camera/color/image_raw',
+            'image_topic',
             self.arm_image_callback,
             10
         )
@@ -112,7 +113,7 @@ class VideoSubscriber(Node):
         self.get_logger().debug('Received an arm depth image')
         cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
         cv_image = cv2.applyColorMap(cv2.convertScaleAbs(cv_image, alpha=0.02), cv2.COLORMAP_JET)
-        cv_image = self.Resize_to_screen(cv_image)
+        #cv_image = self.Resize_to_screen(cv_image)
         cv2.imshow('Depth', cv_image)
         cv2.waitKey(1)
 

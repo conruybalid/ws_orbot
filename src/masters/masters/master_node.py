@@ -211,6 +211,8 @@ class MasterNode(Node):
 
             # scale the coordinates and create message
             move_msg.position = apple_coordinates
+            if not ((apple_coordinates.x <= tolerance and apple_coordinates.x >= -tolerance) and (apple_coordinates.y <= tolerance and apple_coordinates.y >= -tolerance)):
+                move_msg.position.z = 0.0
             move_msg.angle.x = 0.0
             move_msg.angle.y = 0.0
             move_msg.angle.z = 0.0        
@@ -224,6 +226,7 @@ class MasterNode(Node):
             # Publish Arm Movement
             self.send_move_goal(move_goal)
             self.get_logger().debug(f'moved {move_msg.position.x} in x, {move_msg.position.y} in y')
+        
         
         return True
     
@@ -332,16 +335,16 @@ class MasterNode(Node):
                     break
                 
                 # Reach for the Apple
-                if self.distance is not None:
-                    if self.reach_apple():
-                        # Grab the Apple
-                        self.grab_apple()
+                # if self.distance is not None:
+                #     if self.reach_apple():
+                #         # Grab the Apple
+                self.grab_apple()
 
-                else:
-                    self.get_logger().warn('No depth found \nPerfroming placeholder "reach for apple"')
-                    self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, 0.2]))
-                    # Grab the Apple
-                    self.grab_apple()
+                # else:
+                #     self.get_logger().warn('No depth found \nPerfroming placeholder "reach for apple"')
+                #     self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, 0.2]))
+                #     # Grab the Apple
+                #     self.grab_apple()
 
         except KeyboardInterrupt:
             self.get_logger().warn('Routine Aborted')
