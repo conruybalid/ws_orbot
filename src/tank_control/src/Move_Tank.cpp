@@ -38,6 +38,7 @@ Attributes:
 class MoveTank : public rclcpp::Node
 {
   public:
+    bool is_connected = false;
     MoveTank(string input_port)
     : Node("move_tank"), device_()
     {
@@ -51,13 +52,7 @@ class MoveTank : public rclcpp::Node
 
         if (status != RQ_SUCCESS)
         {
-            RCLCPP_ERROR(this->get_logger(), "Unable to connect to device, status: %d\n attempting to connect ACM1", status);
-            port = "/dev/ttyACM1";
-            status = device_.Connect(port);
-            if (status != RQ_SUCCESS)
-            {
-                RCLCPP_ERROR(this->get_logger(), "Still unable to connect to device, status: %d\n", status);
-            }
+            RCLCPP_ERROR(this->get_logger(), "Unable to connect to device, status: %d", status);
 
         }
 
@@ -69,14 +64,17 @@ class MoveTank : public rclcpp::Node
                 cout << "Error occurred while transmitting data to device" << endl;
             }
         }
-        else
+        else{
+            is_connected = true;
             cout<<"succeeded."<<endl;
+        }
         
         sleepms(10);
 
         device_.Disconnect();
         
     }
+
 
   private:
     RoboteqDevice device_;
@@ -152,8 +150,15 @@ class MoveTank : public rclcpp::Node
 
 int main(int argc, char * argv[])
 {
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<MoveTank>("/dev/ttyACM0"));
-  rclcpp::shutdown();
-  return 0;
+    rclcpp::init(argc, argv);
+    auto moveTank = std::make_shared<MoveTank>("/dev/ttyRoboteq");
+    
+    if (moveTank->is_connected) {
+        rclcpp::spin(moveTank);
+    } else {
+        RCLCPP_ERROR(moveTank->get_logger(), "Unable to connect to device, destroying node");
+    }
+    
+    rclcpp::shutdown();
+    return 0;
 }
