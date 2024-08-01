@@ -103,7 +103,7 @@ class VideoSubscriber(Node):
     def arm_image_callback(self, msg):
         self.get_logger().debug('Received an arm rgb image')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
-        cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+        #cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
         cv_image = self.Resize_to_screen(cv_image)
         self.images[0] = cv_image
         # cv2.imshow('Image', cv_image)
