@@ -41,6 +41,8 @@ class MoveArmServer(Node):
             self.execute_callback
         )
 
+        self.move_tolerance = 0.01
+
         self.router = router        
 
         # Create required services
@@ -130,12 +132,11 @@ class MoveArmServer(Node):
         feedback = base_cyclic.RefreshFeedback()
 
         # Accessing the X, Y, Z position of the tool
-        arm_x = feedback.base.tool_pose_x
-        arm_y = feedback.base.tool_pose_y
-        arm_z = feedback.base.tool_pose_z
+        old_arm_z = feedback.base.tool_pose_x
+        old_arm_x = feedback.base.tool_pose_y
+        old_arm_y = feedback.base.tool_pose_z
 
         # Get the coordinates from the user
-        coordinates = [point.x + arm_x, point.y + arm_y, point.z + arm_z]
 
         success = True   
 
@@ -145,12 +146,31 @@ class MoveArmServer(Node):
         try:
             success &= move_trajectory(base, base_cyclic, waypointsDefinition)
         except:
-            self.get_logger().error(f'Error in trajectory: {coordinates[0]}, {coordinates[1]}, {coordinates[2]}')
+            self.get_logger().error(f'Error in trajectory: {point.x}, {point.y}, {point.z}')
             goal_handle.abort()
             result.result = False
-        
-        self.get_logger().info('Moved to position: %f, %f, %f' % (feedback.base.tool_pose_x, feedback.base.tool_pose_y, feedback.base.tool_pose_z))
 
+        feedback = base_cyclic.RefreshFeedback()
+
+        arm_z = feedback.base.tool_pose_x
+        arm_x = feedback.base.tool_pose_y
+        arm_y = feedback.base.tool_pose_z
+
+
+        self.get_logger().info('Moved to position: %f, %f, %f' % (arm_x, arm_y, arm_z))
+
+        if goal.reference_frame == Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL:
+            point.x += old_arm_x
+            point.y += old_arm_y
+            point.z += old_arm_z
+
+        if ((arm_x < point.x - self.move_tolerance or arm_x > point.x + self.move_tolerance)
+            or (arm_y < point.y - self.move_tolerance or arm_y > point.y + self.move_tolerance)
+            or (arm_z < point.z - self.move_tolerance or arm_z > point.z + self.move_tolerance)):
+                self.get_logger().error('Failed to reach the desired position')
+                goal_handle.abort()
+                result.result = False
+                return result
 
         # Gripper control
 

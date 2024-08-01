@@ -197,6 +197,15 @@ def main():
             waypointsDefinition = populateCartesianCoordinate(waypointsDefinition)
 
             success &= move_trajectory(base, base_cyclic, waypointsDefinition)
+
+            feedback = base_cyclic.RefreshFeedback()
+
+            arm_x = feedback.base.tool_pose_x
+            arm_y = feedback.base.tool_pose_y
+            arm_z = feedback.base.tool_pose_z
+
+
+            print(f"Arm moved to: {arm_x}, {arm_y}, {arm_z}")
        
         return 0 if success else 1
 
