@@ -374,9 +374,9 @@ class MasterNode(Node):
 
         self.get_logger().info('Master Node Routine Started')
         
-        found_apples: bool = True
+
         try:
-            for _ in range(2):
+            while True:
 
                 if self.tank:
                     self.get_logger().info('Moving on...')
@@ -390,10 +390,9 @@ class MasterNode(Node):
                     # Center the apple
                     self.get_logger().info('Centering Apple')
                     if not self.center_apple():
-                        break
+                        continue
                     
                     self.grab_apple()
-
 
 
         except KeyboardInterrupt:
@@ -405,7 +404,7 @@ class MasterNode(Node):
                 self.publish_tank_commands(0, 0)
 
             # Return to home position
-            self.send_move_goal(self.format_move_goal(position=[0.0, 0.5, 0.5], angle=[0.0, 90.0, 90.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+            self.send_move_goal(self.format_move_goal(position=[-0.3, 0.5, 0.25], angle=[0.0, 90.0, 90.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
 
     
         return
