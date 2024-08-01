@@ -104,8 +104,14 @@ class ImageProcessingService(Node):
                         print(self.depth_image.shape)
                         print(self.rgb_image.shape)
                         print(center_y * SCALE_Y + OFFSET_Y, center_x * SCALE_X + OFFSET_X)
+                        depth_y = int(center_y * SCALE_Y + OFFSET_Y)
+                        if depth_y > 270:
+                            depth_y = 265
+                        depth_x = int(center_x * SCALE_X + OFFSET_X)
+                        if depth_x > 480:
+                            depth_x = 475
 
-                        response.apple_coordinates.z = float(self.depth_image[int(center_y * SCALE_Y + OFFSET_Y), int(center_x * SCALE_X + OFFSET_X)]) / 1000.0 - 0.15
+                        response.apple_coordinates.z = float(self.depth_image[depth_y, depth_x]) / 1000.0 - 0.15
 
                 else:
                     response.apple_coordinates = failed_coordinates
