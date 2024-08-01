@@ -55,6 +55,8 @@ class XboxPublisher(Node):
             self.get_logger().warn(str(e))
             self.right_speed = 0
             self.left_speed = 0
+            if self.manual_control:
+                self.publish_tank(0,0)
             time.sleep(3)
             importlib.reload(inputs) # Re-import the devices module to reinitialize
             return
