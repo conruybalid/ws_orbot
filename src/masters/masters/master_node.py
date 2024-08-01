@@ -178,7 +178,7 @@ class MasterNode(Node):
             self.process_service_error(error_status)
             return False
             
-        self.send_move_goal(self.format_move_goal(position=[0.0, 0.5, 0.5], angle=[0.0, 90.0, 90.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+        self.send_move_goal(self.format_move_goal(position=[-0.3, 0.5, 0.25], angle=[0.0, 90.0, 90.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
         
         x = point.x
         y = point.y
@@ -299,7 +299,7 @@ class MasterNode(Node):
 
             
             # Drop off apple
-            self.send_move_goal(self.format_move_goal(position=[0.0, 0.5, 0.5], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+            self.send_move_goal(self.format_move_goal(position=[-0.3, 0.5, 0.25], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
 
             if not (
             self.send_move_goal(self.format_move_goal(position=[-0.4, 0.2, 0.0], angle=[0.0, 90.0, 180.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
@@ -337,11 +337,11 @@ class MasterNode(Node):
         Moves the tank forward until apple is found
         """
         self.get_logger().info('Moving Tank')
-        self.publish_tank_commands(-200, -200)
         try:                    
             error_status, point = self.call_zed_service()
             fail_count = 0
             while error_status != 0 and fail_count < 3:
+                self.publish_tank_commands(-200, -200)
                 error_status, point = self.call_zed_service()
                 if error_status == 0 or error_status == 1:
                     fail_count = 0
@@ -353,6 +353,7 @@ class MasterNode(Node):
         finally:
             self.get_logger().info('Stopping Tank')
             self.publish_tank_commands(0, 0)
+            self.publish_tank_commands(0, 0) # IDK, twice for extra measure I guess
 
         return
 
