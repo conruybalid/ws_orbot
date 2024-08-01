@@ -53,7 +53,9 @@ class XboxPublisher(Node):
             events = inputs.get_gamepad()
         except Exception as e:
             self.get_logger().warn(str(e))
-            time.sleep(5)
+            self.right_speed = 0
+            self.left_speed = 0
+            time.sleep(3)
             importlib.reload(inputs) # Re-import the devices module to reinitialize
             return
         for event in events:
