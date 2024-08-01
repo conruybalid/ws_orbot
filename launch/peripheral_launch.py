@@ -36,7 +36,7 @@ def generate_launch_description():
         Node(
             package='image_processing',
             executable='arm_location_service',
-            arguments=['--ros-args', '--log-level', 'WARN']
+            arguments=['--ros-args', '--log-level', 'INFO']
 
         ),
 
@@ -49,12 +49,12 @@ def generate_launch_description():
         Node(
             package='image_processing',
             executable='zed_location_service',
-            arguments=['--ros-args', '--log-level', 'WARN']
+            arguments=['--ros-args', '--log-level', 'INFO']
         ),
         Node(
             package='arm_control',
             executable='arm_move_action',
-            arguments=['--ros-args', '--log-level', 'INFO']
+            arguments=['--ros-args', '--log-level', 'WARN']
 
         ),
         Node(

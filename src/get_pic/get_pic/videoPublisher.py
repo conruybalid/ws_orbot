@@ -5,6 +5,7 @@ import cv2
 from cv_bridge import CvBridge
 from get_pic.VideoQueue import VideoStreamHandler
 
+import time
 
 class VideoPublisher(Node):
     """
@@ -44,6 +45,7 @@ class VideoPublisher(Node):
             self.get_logger().error(f'Failed to initialize video stream handler: attempt {i}')
             self.video_stream_handler = None
             i += 1
+            time.sleep(2)
             self.video_stream_handler = VideoStreamHandler(rtsp_url)
             
 

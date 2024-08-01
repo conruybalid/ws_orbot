@@ -117,6 +117,9 @@ class ZedLocation(Node):
                     x, y, z = self.zed_pointcloud[center_y, center_x]
 
                     self.get_logger().debug(f'point cloud: {x}, {y}, {z}')
+
+                    if math.isnan(x) or math.isnan(y) or math.isnan(z) or math.isinf(x) or math.isinf(y) or math.isinf(z):
+                        continue
                     
 
                     # # Convert the coordinates to meters in reference to arm base
@@ -126,9 +129,10 @@ class ZedLocation(Node):
 
                     self.get_logger().info(f'x_distance: {x_distance}, y_distance: {y_distance}, z_distance: {z_distance}')
 
-                    if (math.sqrt(x_distance**2 + y_distance**2 + z_distance**2) > 1.0):
+                    euclidean_distance = math.sqrt(x_distance**2 + y_distance**2 + z_distance**2)
+                    if (euclidean_distance > 1.0 or euclidean_distance < 0.65):
                         viewing_mask = cv2.rectangle(self.zed_image, (x1_p, y1_p), (x2_p, y2_p), (0, 255, 0), 5)
-                        self.get_logger().info(f'Euclidean distance: {math.sqrt(x_distance**2 + y_distance**2 + z_distance**2)} too far')
+                        self.get_logger().info(f'Euclidean distance: {euclidean_distance} unattainable')
                         continue
 
                 
@@ -159,6 +163,9 @@ class ZedLocation(Node):
                 response.error_status = 1
 
 
+            mask_msg = CvBridge().cv2_to_imgmsg(viewing_mask)
+            self.maskpublisher.publish(mask_msg)
+
         else:
             self.get_logger().error("No Image from Camera")
             response.apple_coordinates.x = 0.0
@@ -166,9 +173,6 @@ class ZedLocation(Node):
             response.apple_coordinates.z = 0.0
             response.error_status = 3
 
-
-        mask_msg = CvBridge().cv2_to_imgmsg(viewing_mask)
-        self.maskpublisher.publish(mask_msg)
 
         self.zed_image = None
         self.zed_pointcloud = None

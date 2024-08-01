@@ -5,6 +5,8 @@ from rclpy.action import ActionClient
 from custom_interfaces.msg import ArmControl
 from custom_interfaces.action import MoveArm
 from custom_interfaces.srv import GetLocation
+from custom_interfaces.msg import Tank
+
 
 from kortex_api.autogen.messages import Base_pb2
 
@@ -30,13 +32,15 @@ class MasterNode(Node):
             distance (float): The distance to the apple from the zed camera. Used to determine how far the arm should reach out.
 
     """
-    def __init__(self):
+    def __init__(self, tank: bool = False):
         """
         Init fuction for the MasterNode class.
         calls the init function of the parent class (Node) and initializes the subscriptions, publishers and action clients.
         """
 
         super().__init__('Master_Node')
+
+        self.tank: bool = tank
 
         self.get_logger().info('Initializing Master Node')
 
@@ -51,6 +55,10 @@ class MasterNode(Node):
         self.distance = None
 
         self.arm_action_client = ActionClient(self, MoveArm, 'move_arm_action')
+
+        if self.tank:
+            self.get_logger().info('Tank Mode Activated')
+            self.tank_comand_publisher = self.create_publisher(Tank, 'move_tank_commands', 10)
 
         self.get_logger().info('Master Node Initialized')
 
@@ -156,15 +164,21 @@ class MasterNode(Node):
         Then it will move the arm to that location.
         """
         self.get_logger().info('Asking Zed Camera for Apple Location')
-        for _ in range(3):     
-            error_status, point = self.call_zed_service()
-           
-            if error_status != 0:
-                self.process_service_error(error_status)
-                time.sleep(5)
-                continue
+        #for _ in range(3):     
+        error_status, point = self.call_zed_service()
+        
+        if error_status == 3:
+            for _ in range(3):
+                time.sleep(0.5) 
+                error_status, point = self.call_zed_service()
+                if error_status != 3:
+                    break
+
         if error_status != 0:
+            self.process_service_error(error_status)
             return False
+            
+        self.send_move_goal(self.format_move_goal(position=[0.0, 0.5, 0.5], angle=[0.0, 90.0, 90.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
         
         x = point.x
         y = point.y
@@ -295,7 +309,7 @@ class MasterNode(Node):
                 time.sleep(1)
             else:
                 self.get_logger().info('Dropped off apple')
-                self.send_move_goal(self.format_move_goal(position=[0.0, 0.5, 0.5], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+                #self.send_move_goal(self.format_move_goal(position=[0.0, 0.5, 0.5], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
 
 
             
@@ -304,6 +318,41 @@ class MasterNode(Node):
             self.get_logger().warn('Abort, Opening Gripper')
             self.send_move_goal(self.format_move_goal(gripper_state=1))
 
+
+        return
+    
+    def publish_tank_commands(self, L, R):
+        """
+        Publishes the tank movement commands to the tank controller node.
+        """
+        msg = Tank()
+        msg.left_speed = L
+        msg.right_speed = R
+        self.tank_comand_publisher.publish(msg)
+        self.get_logger().debug(f"Publishing: {msg.left_speed}, {msg.right_speed}")
+        return
+
+    def move_tank(self):
+        """
+        Moves the tank forward until apple is found
+        """
+        self.get_logger().info('Moving Tank')
+        self.publish_tank_commands(-200, -200)
+        try:                    
+            error_status, point = self.call_zed_service()
+            fail_count = 0
+            while error_status != 0 and fail_count < 3:
+                error_status, point = self.call_zed_service()
+                if error_status == 0 or error_status == 1:
+                    fail_count = 0
+                    continue
+                else:
+                    fail_count += 1
+                    time.sleep(2)
+                
+        finally:
+            self.get_logger().info('Stopping Tank')
+            self.publish_tank_commands(0, 0)
 
         return
 
@@ -323,35 +372,39 @@ class MasterNode(Node):
         """
 
         self.get_logger().info('Master Node Routine Started')
+        
+        found_apples: bool = True
         try:
-            while True:
+            for _ in range(2):
 
-                if not self.Go_to_Apple():
-                    break
-
-                # Center the apple
-                self.get_logger().info('Centering Apple')
-                if not self.center_apple():
-                    break
+                if self.tank:
+                    self.get_logger().info('Moving on...')
+                    self.move_tank()
                 
-                # Reach for the Apple
-                # if self.distance is not None:
-                #     if self.reach_apple():
-                #         # Grab the Apple
-                self.grab_apple()
+                while True:
+                    
+                    if not self.Go_to_Apple():
+                        break
 
-                # else:
-                #     self.get_logger().warn('No depth found \nPerfroming placeholder "reach for apple"')
-                #     self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, 0.2]))
-                #     # Grab the Apple
-                #     self.grab_apple()
+                    # Center the apple
+                    self.get_logger().info('Centering Apple')
+                    if not self.center_apple():
+                        break
+                    
+                    self.grab_apple()
+
+
 
         except KeyboardInterrupt:
             self.get_logger().warn('Routine Aborted')
 
+        finally:
+            if self.tank:
+                # Stop tank
+                self.publish_tank_commands(0, 0)
 
-        # Return to home position
-        self.send_move_goal(self.format_move_goal(position=[0.0, 0.5, 0.5], angle=[0.0, 90.0, 90.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+            # Return to home position
+            self.send_move_goal(self.format_move_goal(position=[0.0, 0.5, 0.5], angle=[0.0, 90.0, 90.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
 
     
         return
@@ -364,22 +417,23 @@ class MasterNode(Node):
     
     def test(self):
         self.get_logger().info('Testing')
-        
-        # self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, 0.2]))
-        # self.get_logger().info('Forward Goal Sent')
-        # self.send_move_goal(self.format_move_goal(gripper_state=2))
-        # self.send_move_goal(self.format_move_goal(angle=[0.0, 0.0, 100.0]))
-        # self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, -0.2], angle=[0.0, 0.0, -100.0], gripper_state=1))
-        # self.get_logger().info('Backward Goal Sent')
-
-        self.Go_to_Apple()
-
-        self.send_move_goal(self.format_move_goal(position=[0.0, 0.5, 0.5], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+    
+        self.move_tank()
 
         self.get_logger().info('Test Complete')
         return
 
 
+def parse_args():
+    """
+    This function parses the command line arguments.
+    """
+    import argparse
+    parser = argparse.ArgumentParser(description='Master Node')
+    parser.add_argument('--tank', type=bool, help='Run the Tank wheels')
+    parser.add_argument('--test', type=bool, help='Run the Test Routine')
+    parsed_args, unknown = parser.parse_known_args()
+    return parsed_args, unknown
 
 """
 Main Function
@@ -390,10 +444,14 @@ def main(args=None):
     This function initializes the master node and runs the main routine.
     Once it is complete, it cleans up by destroying the node and shutting down the rclpy system.
     """
-    rclpy.init(args=args)
-    node = MasterNode()
+    parsed_args, unknown = parse_args()
+    rclpy.init(args=unknown)
+    node = MasterNode(parsed_args.tank)
     rclpy.spin_once(node, timeout_sec=1.0)
-    node.run() # Run the main routine       
+    if parsed_args.test:
+        node.test()
+    else:
+        node.run() # Run the main routine       
     node.get_logger().info('Destroying Master Node')
     node.arm_action_client.destroy()
     node.destroy_node()
