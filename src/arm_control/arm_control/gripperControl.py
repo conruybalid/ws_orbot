@@ -81,10 +81,20 @@ class GripperCommand:
         Opens the gripper to the fully open position.
         """
         gripper_command = Base_pb2.GripperCommand()
+        gripper_request = Base_pb2.GripperRequest()
         finger = gripper_command.gripper.finger.add()
         gripper_command.mode = Base_pb2.GRIPPER_POSITION
+        gripper_request.mode = Base_pb2.GRIPPER_POSITION
         finger.value = 0.0
         self.base.SendGripperCommand(gripper_command)
+        for _ in range(10):
+            if self.base.GetMeasuredGripperMovement(gripper_request).finger[0].value < 0.01:
+                break
+            else:
+                time.sleep(0.1)
+        return
+            
+            
 
 def main():
     import argparse
