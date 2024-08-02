@@ -50,6 +50,7 @@ class ZedLocation(Node):
 
         self.AI = AI_model()
 
+
         self.get_logger().info('Distance publisher node has been initialized')
         
 
@@ -85,6 +86,26 @@ class ZedLocation(Node):
         return points_array
 
 
+    def drawText(self, image, text, x, y):
+        """
+        Draws text on an image at a given location.
+        """
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 1.0
+        color = (255, 255, 255)
+        thickness = 2
+        # Get the text size
+        (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, thickness)
+        
+        # Background rectangle coordinates
+        rect_start = (x, y - text_height - baseline)
+        rect_end = (x + text_width, y - 3)
+        
+        # Draw the background rectangle
+        image = cv2.rectangle(image, rect_start, rect_end, (0, 0, 255), cv2.FILLED)
+
+        image = cv2.putText(image, text, (x, y), font, font_scale, color, thickness)
+        return image
 
 
     def process_image_callback(self,  request, response):
@@ -98,18 +119,17 @@ class ZedLocation(Node):
         if self.zed_image is not None and self.zed_pointcloud is not None:
             
             image = cv2.cvtColor(self.zed_image, cv2.COLOR_BGR2RGB)
-            pixels = self.AI.GetAppleCoordinates(image, confidence_threshold=0.7)
+            pixels = self.AI.GetAppleCoordinates(image, confidence_threshold=0.6)
 
             viewing_mask = self.zed_image
-            for x1_p, y1_p, x2_p, y2_p in pixels:
+            for x1_p, y1_p, x2_p, y2_p, conf in pixels:
                 viewing_mask = cv2.rectangle(viewing_mask, (x1_p, y1_p), (x2_p, y2_p), (255, 0, 0), 5)
+                viewing_mask = self.drawText(viewing_mask, f"{conf:.3f}", x1_p, y1_p - 3)
             
             
-            
-            # Find the center of the largest contour
             if len(pixels) > 0:
                 for pixel in pixels:
-                    x1_p, y1_p, x2_p, y2_p = pixel
+                    x1_p, y1_p, x2_p, y2_p, *_ = pixel
 
                     center_x = int((x1_p + x2_p) / 2)
                     center_y = int((y1_p + y2_p) / 2)

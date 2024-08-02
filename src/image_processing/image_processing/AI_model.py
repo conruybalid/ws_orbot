@@ -28,7 +28,10 @@ class AI_model:
 
         apple_pixels = results.xyxy[0] # apple_pixels auto sorted by confidence
 
-        apple_coordinates = [(int(x1.item()), int(y1.item()), int(x2.item()), int(y2.item())) for x1, y1, x2, y2, *_ in apple_pixels]
+        apple_coordinates = [
+            (int(x1.item()), int(y1.item()), int(x2.item()), int(y2.item()), conf.item()) 
+            for x1, y1, x2, y2, conf, *_ in apple_pixels 
+            if conf.item() > confidence_threshold]
 
         return apple_coordinates
     
