@@ -121,6 +121,7 @@ class MoveArmServer(Node):
         goal = goal_handle.request.goal
         feedback = MoveArm.Feedback()
         result = MoveArm.Result()
+
         
         point = goal.position
         gripper_state = goal.gripper_state
@@ -136,7 +137,26 @@ class MoveArmServer(Node):
         old_arm_x = feedback.base.tool_pose_y
         old_arm_y = feedback.base.tool_pose_z
 
-        # Get the coordinates from the user
+        # Check if movement if valid
+        if goal.reference_frame == Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE:
+            if goal.position.z < 0.0:
+                self.get_logger().error('Too far back')
+                goal_handle.abort()
+                result.result = False
+                return result
+            
+            elif goal.position.z < 0.15 and goal.angle.z < 160.0:
+                self.get_logger().error('Too far back (unless z angle is greater than 160)')
+                goal_handle.abort()
+                result.result = False
+                return result
+        elif goal.reference_frame == Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL:
+            if goal.position.z + old_arm_z < 0.15:
+                self.get_logger().error('Too far back')
+                goal_handle.abort()
+                result.result = False
+                return result
+
 
         success = True   
 
