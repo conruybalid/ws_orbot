@@ -61,7 +61,7 @@ class XboxPublisher(Node):
             importlib.reload(inputs) # Re-import the devices module to reinitialize
             return
         for event in events:
-            if event.ev_type == 'Key':
+            if event.ev_type == 'Key' or event.ev_type == 'Absolute':
                 if event.code == 'BTN_SOUTH' and event.state == 1:
                     self.manual_control = not self.manual_control
                     self.get_logger().info(f"Manual Control: {self.manual_control}")
@@ -88,6 +88,18 @@ class XboxPublisher(Node):
                         goal_msg = self.format_move_goal([0.0,0.5,0.5], [0.0,90.0,90.0], 0, 3)
                         self.waypoints.append(goal_msg)
                         return
+                    if event.code == 'ABS_HAT0X':
+                        if event.state == 1:
+                            self.get_logger().info("Opening Gripper")
+                            goal_msg = self.format_move_goal(gripper_state=1)
+                            self.waypoints.append(goal_msg)
+                            return
+
+                        elif event.state == -1:
+                            self.get_logger().info("Closing Gripper")
+                            goal_msg = self.format_move_goal(gripper_state=2) 
+                            self.waypoints.append(goal_msg)
+                            return
 
             if event.ev_type == 'Absolute':
                 if event.code == 'ABS_Y':
