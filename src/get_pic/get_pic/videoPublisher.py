@@ -43,10 +43,10 @@ class VideoPublisher(Node):
         i = 0
         while not self.video_stream_handler.cap.isOpened():
             self.get_logger().error(f'Failed to initialize video stream handler: attempt {i}')
-            self.video_stream_handler = None
+            self.video_stream_handler.stop()
             i += 1
-            time.sleep(2)
-            self.video_stream_handler = VideoStreamHandler(rtsp_url)
+            time.sleep(10)
+            self.video_stream_handler.__init__(rtsp_url)
             
 
         self.get_logger().info('rtsp has been initialized')
