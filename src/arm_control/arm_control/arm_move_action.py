@@ -145,8 +145,8 @@ class MoveArmServer(Node):
                 result.result = False
                 return result
             
-            elif goal.position.z < 0.15 and goal.angle.z < 160.0:
-                self.get_logger().error('Too far back (unless z angle is greater than 160)')
+            elif goal.position.z < 0.15 and not (goal.angle.z > 160.0 or (goal.angle.y < 45 and goal.angle.y >= 0.0) or (goal.angle.y > 135 and goal.angle.y <= 180.0)):
+                self.get_logger().error('Too far back (unless angle is changed)')
                 goal_handle.abort()
                 result.result = False
                 return result
