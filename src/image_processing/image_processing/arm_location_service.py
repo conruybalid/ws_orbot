@@ -111,7 +111,13 @@ class ImageProcessingService(Node):
                         if depth_x > 480:
                             depth_x = 475
 
-                        response.apple_coordinates.z = float(self.depth_image[depth_y, depth_x]) / 1000.0 - 0.15
+                        average_depth = 0
+                        for dy in range(-2,3):
+                            for dx in range(-2,3):
+                                average_depth += float(self.depth_image[depth_y+dy, depth_x+dx])
+                        average_depth = average_depth / 25
+
+                        response.apple_coordinates.z = average_depth / 1000.0 - 0.15
 
                 else:
                     response.apple_coordinates = failed_coordinates
