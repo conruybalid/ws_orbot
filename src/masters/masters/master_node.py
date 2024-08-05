@@ -59,7 +59,7 @@ class MasterNode(Node):
             self.get_logger().info('Tank Mode Activated')
             self.tank_comand_publisher = self.create_publisher(Tank, 'move_tank_commands', 10)
 
-        self.right_home = self.format_move_goal(position=[-0.3, 0.5, 0.25], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE)
+        self.right_home = self.format_move_goal(position=[-0.3, 0.5, 0.3], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE)
         self.foward_home = self.format_move_goal(position=[0.0, 0.5, 0.45], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE)
         self.home = self.right_home
 
@@ -430,13 +430,48 @@ class MasterNode(Node):
     def test(self):
         self.get_logger().info('Testing')
     
-        self.send_move_goal(self.foward_home)
-        self.send_move_goal(self.right_home)
+        # self.send_move_goal(self.foward_home)
+        # self.send_move_goal(self.right_home)
 
-        self.send_move_goal(self.format_move_goal(position=[-0.4, 0.2, 0.0], angle=[0.0, 90.0, 180.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+        # self.send_move_goal(self.format_move_goal(position=[-0.4, 0.2, 0.0], angle=[0.0, 90.0, 180.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
 
-        self.send_move_goal(self.foward_home)
+        # self.send_move_goal(self.foward_home)
+        try:
+            while True:
+
+                if self.tank:
+                    self.get_logger().info('Moving on...')
+                    self.move_tank()
+                    time.sleep(5)
+                
+                while True:
+                    
+                    if not self.Go_to_Apple():
+                        time.sleep(10)
+                        break
+
+                    # Center the apple
+                    self.get_logger().info('Centering Apple')
+                    if not self.center_apple():
+                        time.sleep(10)
+                        continue
+                    
+                    self.grab_apple()
+
+
+        except KeyboardInterrupt:
+            self.get_logger().warn('Routine Aborted')
+
+        finally:
+            if self.tank:
+                # Stop tank
+                self.publish_tank_commands(0, 0)
+
+            # Return to home position
+            self.send_move_goal(self.home)
+
         
+
 
         self.get_logger().info('Test Complete')
         return
