@@ -6,6 +6,7 @@ from sensor_msgs.msg import Image
 
 import cv2
 from cv_bridge import CvBridge
+import numpy as np
 
 from image_processing.ImageProcess import processImage
 
@@ -85,6 +86,7 @@ class ImageProcessingService(Node):
         image = cv2.putText(image, text, (x, y), font, font_scale, color, thickness)
         return image
 
+    
     def process_image_callback(self, request, response):
         """
         When called, uses the ImageProcess function (imported) to apply a red mask to the image and locate the apples.
@@ -125,9 +127,9 @@ class ImageProcessingService(Node):
                         response.error_status = 0
 
                         response.apple_coordinates.x, response.apple_coordinates.y = self.pixel_scale(center_x, center_y)
-                        print(self.depth_image.shape)
-                        print(self.rgb_image.shape)
-                        print(center_y * SCALE_Y + OFFSET_Y, center_x * SCALE_X + OFFSET_X)
+                        # print(self.depth_image.shape)
+                        # print(self.rgb_image.shape)
+                        # print(center_y * SCALE_Y + OFFSET_Y, center_x * SCALE_X + OFFSET_X)
                         depth_y = int(center_y * SCALE_Y + OFFSET_Y)
                         if depth_y > 270:
                             depth_y = 265
@@ -135,11 +137,7 @@ class ImageProcessingService(Node):
                         if depth_x > 480:
                             depth_x = 475
 
-                        average_depth = 0
-                        for dy in range(-2,3):
-                            for dx in range(-2,3):
-                                average_depth += float(self.depth_image[depth_y+dy, depth_x+dx])
-                        average_depth = average_depth / 25
+                        average_depth = np.mean(self.depth_image[depth_y - 2: depth_y + 2, depth_x - 2: depth_x + 2])
 
                         response.apple_coordinates.z = average_depth / 1000.0 - 0.15
 

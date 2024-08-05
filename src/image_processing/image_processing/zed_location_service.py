@@ -134,11 +134,12 @@ class ZedLocation(Node):
                     center_x = int((x1_p + x2_p) / 2)
                     center_y = int((y1_p + y2_p) / 2)
 
-                    x, y, z = self.zed_pointcloud[center_y, center_x]
+                    x, y, z = np.mean(self.zed_pointcloud[center_y - 2: center_y + 2, center_x - 2: center_x + 2, :], axis=(0, 1))
 
                     self.get_logger().debug(f'point cloud: {x}, {y}, {z}')
 
                     if math.isnan(x) or math.isnan(y) or math.isnan(z) or math.isinf(x) or math.isinf(y) or math.isinf(z):
+                        self.get_logger().info(f'Invalid point cloud values: {x}, {y}, {z}')
                         continue
                     
 
@@ -165,7 +166,9 @@ class ZedLocation(Node):
                     viewing_mask = cv2.rectangle(self.zed_image, (x1_p, y1_p), (x2_p, y2_p), (0, 0, 255), 5)
                     mask_msg = CvBridge().cv2_to_imgmsg(viewing_mask)
                     self.maskpublisher.publish(mask_msg)
-
+            
+                    self.zed_image = None
+                    self.zed_pointcloud = None
 
                     return response
                 
