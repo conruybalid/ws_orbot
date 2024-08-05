@@ -69,9 +69,9 @@ class ImageProcessingService(Node):
         Draws text on an image at a given location.
         """
         font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 1.0
+        font_scale = 2.5
         color = (255, 255, 255)
-        thickness = 2
+        thickness = 4
         # Get the text size
         (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, thickness)
         

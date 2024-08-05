@@ -137,26 +137,6 @@ class MoveArmServer(Node):
         old_arm_x = feedback.base.tool_pose_y
         old_arm_y = feedback.base.tool_pose_z
 
-        # Check if movement if valid
-        if goal.reference_frame == Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE:
-            if goal.position.z < 0.0:
-                self.get_logger().error('Too far back')
-                goal_handle.abort()
-                result.result = False
-                return result
-            
-            elif goal.position.z < 0.15 and not (goal.angle.z > 160.0 or (goal.angle.y < 45 and goal.angle.y >= 0.0) or (goal.angle.y > 135 and goal.angle.y <= 180.0)):
-                self.get_logger().error('Too far back (unless angle is changed)')
-                goal_handle.abort()
-                result.result = False
-                return result
-        elif goal.reference_frame == Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL:
-            if goal.position.z + old_arm_z < 0.15:
-                self.get_logger().error('Too far back')
-                goal_handle.abort()
-                result.result = False
-                return result
-
 
         success = True   
 

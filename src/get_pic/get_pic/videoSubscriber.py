@@ -6,6 +6,8 @@ from cv_bridge import CvBridge
 from screeninfo import get_monitors
 import numpy as np
 
+SIZE_DIVIDER = 3.2
+
 class VideoSubscriber(Node):
     """
     This Node is used to view usefull image outputs for debug in a 4x4 grid
@@ -66,6 +68,14 @@ class VideoSubscriber(Node):
         )
         self.zed_image = None
 
+        self.zed_depth_subscription = self.create_subscription(
+            Image,
+            'zed_depth_topic',
+            self.zed_depth_callback,
+            10
+        )
+        self.zed_depth_image = None
+
         self.zed_mask_subscription = self.create_subscription(
             Image,
             'zed_mask_topic',
@@ -80,8 +90,8 @@ class VideoSubscriber(Node):
 
         # Create a black image
         self.screen = get_monitors()[0]
-        width = int(self.screen.width / 2.5)
-        height = int(self.screen.height / 2.5)
+        width = int(self.screen.width / SIZE_DIVIDER)
+        height = int(self.screen.height / SIZE_DIVIDER)
         black_image = np.zeros((height, width, 3), dtype=np.uint8)
 
         # Define the border color and thickness
@@ -93,6 +103,7 @@ class VideoSubscriber(Node):
 
 
         self.images = [black_image, black_image, black_image, black_image]
+        self.depth_images = [black_image, black_image]
 
         self.get_logger().info('Video subscriber node has been initialized')
 
@@ -112,10 +123,11 @@ class VideoSubscriber(Node):
     def depth_callback(self, msg):
         self.get_logger().debug('Received an arm depth image')
         cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
-        cv_image = cv2.applyColorMap(cv2.convertScaleAbs(cv_image, alpha=0.02), cv2.COLORMAP_JET)
-        #cv_image = self.Resize_to_screen(cv_image)
-        cv2.imshow('Depth', cv_image)
-        cv2.waitKey(1)
+        cv_image = cv2.applyColorMap(cv2.convertScaleAbs(cv_image, alpha=0.51), cv2.COLORMAP_JET)
+        cv_image = self.Resize_to_screen(cv_image)
+        self.depth_images[0] = cv_image
+        # cv2.imshow('Depth', cv_image)
+        # cv2.waitKey(1)
 
     def arm_mask_callback(self, msg):
         self.get_logger().debug('Received an arm camera mask')
@@ -139,6 +151,15 @@ class VideoSubscriber(Node):
         # cv2.imshow('Zed_Image', cv_image)
         # cv2.waitKey(1)
 
+    def zed_depth_callback(self, msg):
+        self.get_logger().debug('Received a zed depth image')
+        cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
+        cv_image = cv2.applyColorMap(cv2.convertScaleAbs(cv_image, alpha=0.1275), cv2.COLORMAP_JET)
+        cv_image = self.Resize_to_screen(cv_image)
+        self.depth_images[1] = cv_image
+        # cv2.imshow('Zed_Depth', cv_image)
+        # cv2.waitKey(1)
+
     def zed_mask_callback(self, msg):
         self.get_logger().debug('Received a zed mask')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
@@ -156,8 +177,8 @@ class VideoSubscriber(Node):
         """
         Resized the image to fit the screen
         """
-        width = int(self.screen.width / 2.5)
-        height = int(self.screen.height / 2.5)
+        width = int(self.screen.width / SIZE_DIVIDER)
+        height = int(self.screen.height / SIZE_DIVIDER)
         return cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
     
     def display_images(self):
@@ -170,11 +191,16 @@ class VideoSubscriber(Node):
         except:
             self.get_logger().warn('No monitor detected')
             return
-        top_image = np.hstack((self.images[0], self.images[1]))
-        bottom_image = np.hstack((self.images[2], self.images[3]))
-        combined_image = np.vstack((top_image, bottom_image))
+        top_image = np.hstack((self.images[0], self.depth_images[0], self.images[1]))
+        bottom_image = np.hstack((self.images[2], self.depth_images[1], self.images[3]))
+        combined_image = np.vstack((top_image, bottom_image))        
+        
         cv2.imshow('Combined Image', combined_image)
         cv2.waitKey(1)
+
+        # depth_image = np.hstack((self.depth_images[0], self.depth_images[1]))
+        # cv2.imshow('Depth Images', depth_image)
+        # cv2.waitKey(1)
         
         return
         

@@ -39,7 +39,6 @@ class MasterNode(Node):
         """
 
         super().__init__('Master_Node')
-
         self.tank: bool = tank
 
         self.get_logger().info('Initializing Master Node')
@@ -59,6 +58,10 @@ class MasterNode(Node):
         if self.tank:
             self.get_logger().info('Tank Mode Activated')
             self.tank_comand_publisher = self.create_publisher(Tank, 'move_tank_commands', 10)
+
+        self.right_home = self.format_move_goal(position=[-0.3, 0.5, 0.25], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE)
+        self.foward_home = self.format_move_goal(position=[0.0, 0.5, 0.45], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE)
+        self.home = self.right_home
 
         self.get_logger().info('Master Node Initialized')
 
@@ -177,8 +180,15 @@ class MasterNode(Node):
         if error_status != 0:
             self.process_service_error(error_status)
             return False
-            
-        self.send_move_goal(self.format_move_goal(position=[-0.3, 0.5, 0.25], angle=[0.0, 90.0, 90.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+        
+        if point.x < 0.0:
+            self.get_logger().info('Apple to the right: using right home')
+            self.home = self.right_home   
+        else:
+            self.get_logger().info('Apple to the left, using forward home')
+            self.home = self.foward_home
+
+        self.send_move_goal(self.home)
         
         x = point.x
         y = point.y
@@ -299,7 +309,9 @@ class MasterNode(Node):
 
             
             # Drop off apple
-            self.send_move_goal(self.format_move_goal(position=[-0.3, 0.5, 0.25], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+            self.send_move_goal(self.home)
+            if self.home == self.foward_home:
+                self.send_move_goal(self.right_home)
 
             if not (
             self.send_move_goal(self.format_move_goal(position=[-0.4, 0.2, 0.0], angle=[0.0, 90.0, 180.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
@@ -404,7 +416,7 @@ class MasterNode(Node):
                 self.publish_tank_commands(0, 0)
 
             # Return to home position
-            self.send_move_goal(self.format_move_goal(position=[-0.3, 0.5, 0.25], angle=[0.0, 90.0, 90.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+            self.send_move_goal(self.home)
 
     
         return
@@ -418,7 +430,13 @@ class MasterNode(Node):
     def test(self):
         self.get_logger().info('Testing')
     
-        self.move_tank()
+        self.send_move_goal(self.foward_home)
+        self.send_move_goal(self.right_home)
+
+        self.send_move_goal(self.format_move_goal(position=[-0.4, 0.2, 0.0], angle=[0.0, 90.0, 180.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+
+        self.send_move_goal(self.foward_home)
+        
 
         self.get_logger().info('Test Complete')
         return
@@ -430,8 +448,8 @@ def parse_args():
     """
     import argparse
     parser = argparse.ArgumentParser(description='Master Node')
-    parser.add_argument('--tank', type=bool, help='Run the Tank wheels')
-    parser.add_argument('--test', type=bool, help='Run the Test Routine')
+    parser.add_argument('--tank', action='store_true', help='Run the Tank wheels')
+    parser.add_argument('--test', action='store_true', help='Run the Test Routine')
     parsed_args, unknown = parser.parse_known_args()
     return parsed_args, unknown
 

@@ -91,15 +91,15 @@ class ZedLocation(Node):
         Draws text on an image at a given location.
         """
         font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 1.0
+        font_scale = 1.5
         color = (255, 255, 255)
-        thickness = 2
+        thickness = 3
         # Get the text size
         (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, thickness)
         
         # Background rectangle coordinates
         rect_start = (x, y - text_height - baseline)
-        rect_end = (x + text_width, y - 3)
+        rect_end = (x + text_width, y + 3)
         
         # Draw the background rectangle
         image = cv2.rectangle(image, rect_start, rect_end, (0, 0, 255), cv2.FILLED)
