@@ -4,6 +4,7 @@ from rclpy.action import ActionClient
 
 from custom_interfaces.msg import ArmControl
 from custom_interfaces.action import MoveArm
+from custom_interfaces.action import ArmPreset
 from custom_interfaces.srv import GetLocation
 from custom_interfaces.msg import Tank
 
@@ -26,10 +27,11 @@ class MasterNode(Node):
             arm_client (ServiceClient): A service client for the arm location service. Returns the location of apples from the arm camera
 
         Action Clients:
-            arm_action_client (ActionClient): An action client for the move arm action.
+            arm_action_client (ActionClient): An action client for the move arm waypoint action.
+            arm_presets_client (ActionClient): An action client for the arm preset action.
 
         Other Attributes:
-            distance (float): The distance to the apple from the zed camera. Used to determine how far the arm should reach out.
+            home (str): The name of the home position preset in use ('Home' or 'Home Right')
 
     """
     def __init__(self, tank: bool = False):
@@ -51,17 +53,14 @@ class MasterNode(Node):
         while not self.arm_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn('Arm_Locate_Apple_Service not available, waiting again...')
         
-        self.distance = None
-
-        self.arm_action_client = ActionClient(self, MoveArm, 'move_arm_action')
+        self.arm_action_client = ActionClient(self, MoveArm, 'move_arm_waypoint')
+        self.arm_presets_client = ActionClient(self, ArmPreset, 'move_arm_preset_position')
 
         if self.tank:
             self.get_logger().info('Tank Mode Activated')
             self.tank_comand_publisher = self.create_publisher(Tank, 'move_tank_commands', 10)
 
-        self.right_home = self.format_move_goal(position=[-0.3, 0.5, 0.3], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE)
-        self.foward_home = self.format_move_goal(position=[0.0, 0.5, 0.45], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE)
-        self.home = self.right_home
+        self.home: str = 'Home'
 
         self.get_logger().info('Master Node Initialized')
 
@@ -155,6 +154,34 @@ class MasterNode(Node):
 
         
         return result.result
+    
+    def send_preset_goal(self, preset: str):
+        """
+        Sends an preset goal to the arm preset action server.
+        Waits for the server to respond and returns the result.
+        """
+        goal_msg = ArmPreset.Goal()
+        goal_msg.preset_name = preset
+        self.arm_presets_client.wait_for_server()
+        future = self.arm_presets_client.send_goal_async(goal_msg)
+        #future.add_done_callback(self.goal_response_callback)
+        rclpy.spin_until_future_complete(self, future)
+
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            self.get_logger().error('Move Goal rejected :(')
+            return False
+
+        self.get_logger().debug(f'Move Goal sent: \n{goal_msg}')
+
+        result_future = goal_handle.get_result_async()
+        #result_future.add_done_callback(self.get_result_callback)
+        rclpy.spin_until_future_complete(self, result_future)
+        result = result_future.result().result
+        self.get_logger().debug(f'Move Result: {result.result}')
+
+        
+        return result.result
 
 
     """
@@ -183,21 +210,21 @@ class MasterNode(Node):
         
         if point.x < 0.0:
             self.get_logger().info('Apple to the right: using right home')
-            self.home = self.right_home   
+            self.home = 'Home Right'
         else:
             self.get_logger().info('Apple to the left, using forward home')
-            self.home = self.foward_home
+            self.home = 'Home'
 
-        self.send_move_goal(self.home)
+        self.send_preset_goal(self.home)#WARNING: This preset does not check for collisions
         
         x = point.x
         y = point.y
-        self.distance = point.z 
+        z = point.z 
         
-        self.get_logger().info(f'Apple at {x}, {y}, {self.distance}')
+        self.get_logger().info(f'Apple at {x}, {y}, {z}')
 
         #Adjust coordinates so that the camera can see the apple
-        if (self.send_move_goal(self.format_move_goal(position=[x, y - 0.025, self.distance - 0.2], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))):
+        if (self.send_move_goal(self.format_move_goal(position=[x, y - 0.025, z - 0.2], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))):
             self.get_logger().info('Moved to apple location')
         else:
             self.get_logger().error('Failed to move to apple location')
@@ -218,6 +245,7 @@ class MasterNode(Node):
         Then it will move the arm to attempt to center the apple in the frame.
         It will continue until the apple is within a certain range of the center of the frame and return True.
         If sight of the apple is lost, the function will return False.
+        Once the apple is centered, the arm will move towards the apple.
         """
         tolerance = 0.02
         apple_coordinates = None
@@ -233,8 +261,9 @@ class MasterNode(Node):
                 return False
 
 
-            # scale the coordinates and create message
+            # Turn apple coordinate into action message
             move_msg.position = apple_coordinates
+            # If the Arm is not currently centered on the apple, overwrite z coordinate with 0
             if not ((apple_coordinates.x <= tolerance and apple_coordinates.x >= -tolerance) and (apple_coordinates.y <= tolerance and apple_coordinates.y >= -tolerance)):
                 move_msg.position.z = 0.0
             move_msg.angle.x = 0.0
@@ -258,36 +287,8 @@ class MasterNode(Node):
     
     """
     RETRIEVE APPLE FUNCTIONS
-    These functions are used to reach out, grab the apple and drop it in a basket.
-    """
-
-    def reach_apple(self):
-        """
-        If a distance has been received from the zed camera,
-        this function can be used to reach out to the apple.
-        """
-
-        self.get_logger().debug('Reaching for Apple at absolute distance %f' % self.distance)
-        arm_msg = ArmControl()
-        arm_msg.position.x = 99.0
-        arm_msg.position.y = 99.0
-        arm_msg.position.z = self.distance
-        arm_msg.angle.x = 0.0
-        arm_msg.angle.y = 90.0
-        arm_msg.angle.z = 90.0        
-        arm_msg.reference_frame = Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE 
-        arm_msg.gripper_state = 1
-        
-
-        move_goal = MoveArm.Goal()
-        move_goal.goal = arm_msg
-
-        if self.send_move_goal(move_goal):
-            return True
-        else:
-            self.get_logger().error('Could not reach for apple')
-            return False
-        
+    These functions are used to grab the apple and drop it in a basket.
+    """     
 
     def grab_apple(self):
         """
@@ -309,17 +310,16 @@ class MasterNode(Node):
 
             
             # Drop off apple
-            self.send_move_goal(self.home)
-            if self.home == self.foward_home:
-                self.send_move_goal(self.right_home)
+            self.send_preset_goal(self.home) #WARNING: This preset does not check for collisions
 
             if not (
-            self.send_move_goal(self.format_move_goal(position=[-0.4, 0.2, 0.0], angle=[0.0, 90.0, 180.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+            self.send_preset_goal("Drop Apple Angle")#WARNING: This preset does not check for collisions
             ):
                 self.get_logger().error('Failed to drop off apple')
                 self.send_move_goal(self.format_move_goal(gripper_state=1))
                 time.sleep(1)
             else:
+                self.send_move_goal(self.format_move_goal(gripper_state=1))
                 self.get_logger().info('Dropped off apple')
                 #self.send_move_goal(self.format_move_goal(position=[0.0, 0.5, 0.5], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
 
@@ -416,7 +416,7 @@ class MasterNode(Node):
                 self.publish_tank_commands(0, 0)
 
             # Return to home position
-            self.send_move_goal(self.home)
+            self.send_preset_goal('Home')
 
     
         return
@@ -507,6 +507,7 @@ def main(args=None):
         node.run() # Run the main routine       
     node.get_logger().info('Destroying Master Node')
     node.arm_action_client.destroy()
+    node.arm_presets_client.destroy()
     node.destroy_node()
     rclpy.shutdown()
 
