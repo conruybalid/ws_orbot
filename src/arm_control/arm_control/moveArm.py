@@ -89,6 +89,55 @@ def move_to_home_position(base):
         print("Timeout on action notification wait")
     return finished
 
+def move_to_preset_position(base, position_name):
+    """
+    Moves the Robot Arm to a preset position defined in web app (under actions)
+    """
+
+
+    # Make sure the arm is in Single Level Servoing mode
+    base_servo_mode = Base_pb2.ServoingModeInformation()
+    base_servo_mode.servoing_mode = Base_pb2.SINGLE_LEVEL_SERVOING
+    base.SetServoingMode(base_servo_mode)
+    
+    # Move arm to ready position
+    print(f'Moving the arm to {position_name} position')
+    action_type = Base_pb2.RequestedActionType()
+    action_type.action_type = Base_pb2.REACH_JOINT_ANGLES
+    action_list = base.ReadAllActions(action_type)
+    action_handle = None
+    for action in action_list.action_list:
+        if action.name == position_name:
+            action_handle = action.handle
+
+    if action_handle == None:
+        action_type.action_type = Base_pb2.REACH_POSE
+        action_list = base.ReadAllActions(action_type) 
+        for action in action_list.action_list:
+            if action.name == position_name:
+                action_handle = action.handle
+
+    if action_handle == None:
+        print("Position not found. Exiting")
+        return False
+
+    e = threading.Event()
+    notification_handle = base.OnNotificationActionTopic(
+        check_for_end_or_abort(e),
+        Base_pb2.NotificationOptions()
+    )
+
+    base.ExecuteActionFromReference(action_handle)
+    finished = e.wait(TIMEOUT_DURATION)
+    base.Unsubscribe(notification_handle)
+
+    if finished:
+        print(f"{position_name} Position reached")
+    else:
+        print("Timeout on action notification wait")
+    return finished
+
+
 def move_trajectory(base, base_cyclic, waypointsDefinition):
     """
     Moves the robot arm to the specified cartesian waypoint
@@ -208,6 +257,30 @@ def main():
             print(f"Arm moved to: {arm_x}, {arm_y}, {arm_z}")
        
         return 0 if success else 1
+    
+def test():
+    # Import the utilities helper module
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+    import utilities
+
+    # Parse arguments
+    args = utilities.parseConnectionArguments()
+    
+    # Create connection to the device and get the router
+    with utilities.DeviceConnection.createTcpConnection(args) as router:
+
+        # Create required services
+        base = BaseClient(router)
+        base_cyclic = BaseCyclicClient(router)
+        
+        # Example core
+        success = True
+
+        success &= move_to_home_position(base)
+
+        success &= move_to_preset_position(base, "Full Close")
+
+        return 0 if success else 1
 
 if __name__ == "__main__":
-    exit(main())
+    exit(test())

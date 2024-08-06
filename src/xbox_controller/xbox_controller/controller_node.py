@@ -4,7 +4,7 @@ from rclpy.action import ActionClient
 
 from custom_interfaces.msg import Tank
 
-from custom_interfaces.msg import ArmControl
+from custom_interfaces.action import ArmPreset
 from custom_interfaces.action import MoveArm
 
 import time
@@ -41,9 +41,8 @@ class XboxPublisher(Node):
         self.left_speed = 0
         self.right_speed = 0
 
-        self.arm_action_client = ActionClient(self, MoveArm, 'move_arm_action')
-
-        self.waypoints: List[MoveArm.Goal] = []
+        self.arm_action_client = ActionClient(self, ArmPreset, 'move_arm_preset_position')
+        self.arm_waypoint_client = ActionClient(self, MoveArm, 'move_arm_waypoint')
 
 
         self.get_logger().info("Xbox Publisher Node Initialized")
@@ -69,36 +68,25 @@ class XboxPublisher(Node):
                 if not self.manual_control:
                     if event.code == 'BTN_NORTH' and event.state == 1:
                         self.get_logger().info("Moving Arm Left")
-                        goal_msg = self.format_move_goal([0.4,0.5,0.3], [0.0,135.0,90.0], 0, 3) # 3 is the base reference frame
-                        self.waypoints.append(goal_msg)
-                        goal_msg = self.format_move_goal([0.5,0.5,0.0], [0.0,180.0,90.0], 0, 3) # 3 is the base reference frame
-                        self.waypoints.append(goal_msg)
+                        self.send_preset_goal("Left Travel Angle")
                         return #So that only command is sent
                     if event.code == 'BTN_EAST' and event.state == 1:
                         self.get_logger().info("Moving Arm Right")
-                        goal_msg = self.format_move_goal([-0.4,0.5,0.3], [0.0,45.0,90.0], 0, 3) # 3 is the base reference frame
-                        self.waypoints.append(goal_msg)
-                        goal_msg = self.format_move_goal([-0.5,0.5,0.0], [0.0,0.0,90.0], 0, 3)
-                        self.waypoints.append(goal_msg)
+                        self.send_preset_goal("Right Travel Angle")
                         return
                     if event.code == 'BTN_WEST' and event.state == 1:
-                        self.get_logger().info("Moving Arm forward")
-                        goal_msg = self.format_move_goal([0.0,0.5,0.6], [0.0,90.0,90.0], 0, 3)
-                        self.waypoints.append(goal_msg)
-                        goal_msg = self.format_move_goal([0.0,0.5,0.5], [0.0,90.0,90.0], 0, 3)
-                        self.waypoints.append(goal_msg)
+                        self.get_logger().info("Moving Arm Home")
+                        self.send_preset_goal("Home")
                         return
                     if event.code == 'ABS_HAT0X':
                         if event.state == 1:
                             self.get_logger().info("Opening Gripper")
-                            goal_msg = self.format_move_goal(gripper_state=1)
-                            self.waypoints.append(goal_msg)
+                            self.send_grip_goal(1)
                             return
 
                         elif event.state == -1:
                             self.get_logger().info("Closing Gripper")
-                            goal_msg = self.format_move_goal(gripper_state=2) 
-                            self.waypoints.append(goal_msg)
+                            self.send_grip_goal(2)
                             return
 
             if event.ev_type == 'Absolute':
@@ -109,29 +97,14 @@ class XboxPublisher(Node):
                     self.right_speed = map_value(event.state, -32768, 32767, 1000, -1000)
 
         return
-
-    def format_move_goal(self, position=[0.0,0.0,0.0], angle=[0.0,0.0,0.0], gripper_state=0, reference_frame=2): # 2 is the arm reference frame
-        """
-        Quickly formates a goal that can be sent to the arm action server.
-        """
-        goal_msg = MoveArm.Goal()
-        goal_msg.goal.position.x = position[0]
-        goal_msg.goal.position.y = position[1]
-        goal_msg.goal.position.z = position[2]
-        goal_msg.goal.angle.x = angle[0]
-        goal_msg.goal.angle.y = angle[1]
-        goal_msg.goal.angle.z = angle[2]
-        goal_msg.goal.reference_frame = reference_frame
-        goal_msg.goal.gripper_state = gripper_state
-
-        return goal_msg
     
-    def send_move_goal(self, goal_msg):
+    def send_preset_goal(self, preset: str):
         """
-        Sends an waypoint goal to the arm action server.
+        Sends an preset goal to the arm action server.
         Waits for the server to respond and returns the result.
         """
-
+        goal_msg = ArmPreset.Goal()
+        goal_msg.preset_name = preset
         self.arm_action_client.wait_for_server()
         future = self.arm_action_client.send_goal_async(goal_msg)
         #future.add_done_callback(self.goal_response_callback)
@@ -151,7 +124,35 @@ class XboxPublisher(Node):
         self.get_logger().debug(f'Move Result: {result.result}')
 
         
-        return result.result    
+        return result.result
+    
+    def send_grip_goal(self, gripper_state: int):
+        """
+        Sends a gripper goal to the arm waypoint action server.
+        Waits for the server to respond and returns the result.
+        """
+        goal_msg = MoveArm.Goal()
+        goal_msg.goal.reference_frame = 2 # The tool reference frame
+        goal_msg.goal.gripper_state = gripper_state
+
+        self.arm_waypoint_client.wait_for_server()
+        future = self.arm_waypoint_client.send_goal_async(goal_msg)
+        #future.add_done_callback(self.goal_response_callback)
+        rclpy.spin_until_future_complete(self, future)
+
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            self.get_logger().error('Move Goal rejected :(')
+            return False
+
+        self.get_logger().debug(f'Move Goal sent: \n{goal_msg}')
+
+        result_future = goal_handle.get_result_async()
+        #result_future.add_done_callback(self.get_result_callback)
+        rclpy.spin_until_future_complete(self, result_future)
+        result = result_future.result().result
+        self.get_logger().debug(f'Move Result: {result.result}')
+
     
     def publish_tank(self, L, R):
         if L < 100 and L > -100:
@@ -174,10 +175,6 @@ def main(args=None):
             if node.manual_control:
                 node.publish_tank(node.left_speed, node.right_speed)
 
-            else:
-                for waypoint in node.waypoints:
-                    node.send_move_goal(waypoint)
-                node.waypoints = []
             #rclpy.spin_once(node)
 
     except KeyboardInterrupt:

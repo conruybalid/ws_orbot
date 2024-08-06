@@ -2,7 +2,10 @@ import rclpy
 from rclpy.action import ActionServer
 from rclpy.node import Node
 
+from threading import Lock
+
 from custom_interfaces.action import MoveArm
+from custom_interfaces.action import ArmPreset
 
 import arm_control.utilities as utilities
 
@@ -11,7 +14,7 @@ from kortex_api.autogen.client_stubs.BaseCyclicClientRpc import BaseCyclicClient
 
 from kortex_api.autogen.messages import Base_pb2, BaseCyclic_pb2
 
-from arm_control.moveArm import move_to_home_position, move_trajectory
+from arm_control.moveArm import move_to_home_position, move_to_preset_position, move_trajectory
 from arm_control.gripperControl import GripperCommand
 
 
@@ -34,11 +37,21 @@ class MoveArmServer(Node):
 
     def __init__(self, router):
         super().__init__('move_arm_server')
+        
+        self.mutex = Lock()
+
         self.action_server = ActionServer(
             self,
             MoveArm,
-            'move_arm_action',
+            'move_arm_waypoint',
             self.execute_callback
+        )
+
+        self.preset_action_server = ActionServer(
+            self,
+            ArmPreset,
+            'move_arm_preset_position',
+            self.execute_preset_callback
         )
 
         self.move_tolerance = 0.01
@@ -117,93 +130,137 @@ class MoveArmServer(Node):
         Returns:
             MoveArm.Result: The result of the action execution. (True if successful, False otherwise)
         """
+        with self.mutex:
+            goal = goal_handle.request.goal
+            feedback = MoveArm.Feedback()
+            result = MoveArm.Result()
 
-        goal = goal_handle.request.goal
-        feedback = MoveArm.Feedback()
-        result = MoveArm.Result()
-
+            
+            point = goal.position
+            gripper_state = goal.gripper_state
         
-        point = goal.position
-        gripper_state = goal.gripper_state
+            # Create required services
+            base = BaseClient(self.router)
+            base_cyclic = BaseCyclicClient(self.router)     
+            
+            feedback = base_cyclic.RefreshFeedback()
+
+            # Accessing the X, Y, Z position of the tool
+            old_arm_z = feedback.base.tool_pose_x
+            old_arm_x = feedback.base.tool_pose_y
+            old_arm_y = feedback.base.tool_pose_z
+
+
+            success = True   
+
+            # Update the waypointsDefinition with the new coordinates
+            waypointsDefinition = self.FormatWaypoint(goal, feedback)
+
+            try:
+                success &= move_trajectory(base, base_cyclic, waypointsDefinition)
+            except:
+                self.get_logger().error(f'Error in trajectory: {point.x}, {point.y}, {point.z}')
+                goal_handle.abort()
+                result.result = False
+
+            feedback = base_cyclic.RefreshFeedback()
+
+            arm_z = feedback.base.tool_pose_x
+            arm_x = feedback.base.tool_pose_y
+            arm_y = feedback.base.tool_pose_z
+
+
+            self.get_logger().info('Moved to position: %f, %f, %f' % (arm_x, arm_y, arm_z))
+
+            if goal.reference_frame == Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL:
+                point.x += old_arm_x
+                point.y += old_arm_y
+                point.z += old_arm_z
+
+            if ((arm_x < point.x - self.move_tolerance or arm_x > point.x + self.move_tolerance)
+                or (arm_y < point.y - self.move_tolerance or arm_y > point.y + self.move_tolerance)
+                or (arm_z < point.z - self.move_tolerance or arm_z > point.z + self.move_tolerance)):
+                    self.get_logger().error('Failed to reach the desired position')
+                    goal_handle.abort()
+                    result.result = False
+                    return result
+
+            # Gripper control
+
+            # Do nothing with the gripper
+            if gripper_state == 0:
+                pass
+
+            # Open Gripper
+            elif gripper_state == 1:
+                self.gripper_control.OpenGripper()
+                self.get_logger().info('Gripper opened')
+
+            # Close Gripper
+            elif gripper_state == 2:
+                self.gripper_control.GripApple()
+                self.get_logger().info('Gripper closed')
+
+            else:
+                self.get_logger().warn('Invalid gripper state')
+
+
+            # Check if the action was canceled
+            if goal_handle.is_cancel_requested:
+                goal_handle.canceled()
+                result.result = False
+            else:
+                # Set the result
+                result.result = True  
+                goal_handle.succeed()
+            
+            return result
     
-        # Create required services
-        base = BaseClient(self.router)
-        base_cyclic = BaseCyclicClient(self.router)     
-        
-        feedback = base_cyclic.RefreshFeedback()
 
-        # Accessing the X, Y, Z position of the tool
-        old_arm_z = feedback.base.tool_pose_x
-        old_arm_x = feedback.base.tool_pose_y
-        old_arm_y = feedback.base.tool_pose_z
+    def execute_preset_callback(self, goal_handle):
+        """
+        Moves to a named preset position defined in the web UI (under action)
+        WARNING: Angle presets do not check for collisions, use with caution
+        """
 
+        with self.mutex:
+            preset = goal_handle.request.preset_name
+            feedback = ArmPreset.Feedback()
+            result = ArmPreset.Result()
 
-        success = True   
+            # Create required services
+            base = BaseClient(self.router)
+            base_cyclic = BaseCyclicClient(self.router) 
 
-        # Update the waypointsDefinition with the new coordinates
-        waypointsDefinition = self.FormatWaypoint(goal, feedback)
-
-        try:
-            success &= move_trajectory(base, base_cyclic, waypointsDefinition)
-        except:
-            self.get_logger().error(f'Error in trajectory: {point.x}, {point.y}, {point.z}')
-            goal_handle.abort()
-            result.result = False
-
-        feedback = base_cyclic.RefreshFeedback()
-
-        arm_z = feedback.base.tool_pose_x
-        arm_x = feedback.base.tool_pose_y
-        arm_y = feedback.base.tool_pose_z
-
-
-        self.get_logger().info('Moved to position: %f, %f, %f' % (arm_x, arm_y, arm_z))
-
-        if goal.reference_frame == Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL:
-            point.x += old_arm_x
-            point.y += old_arm_y
-            point.z += old_arm_z
-
-        if ((arm_x < point.x - self.move_tolerance or arm_x > point.x + self.move_tolerance)
-            or (arm_y < point.y - self.move_tolerance or arm_y > point.y + self.move_tolerance)
-            or (arm_z < point.z - self.move_tolerance or arm_z > point.z + self.move_tolerance)):
-                self.get_logger().error('Failed to reach the desired position')
+            self.get_logger().info(f'Moving to preset position: {preset}')
+            success = True
+            try:
+                success &= move_to_preset_position(base, preset)
+            except:
+                self.get_logger().error(f'Error in moving to preset: {preset}')
+                goal_handle.abort()
+                result.result = False
+            
+            if not success:
+                self.get_logger().error(f'Error in moving to preset: {preset}')
                 goal_handle.abort()
                 result.result = False
                 return result
 
-        # Gripper control
-
-        # Do nothing with the gripper
-        if gripper_state == 0:
-            pass
-
-        # Open Gripper
-        elif gripper_state == 1:
-            self.gripper_control.OpenGripper()
-            self.get_logger().info('Gripper opened')
-
-        # Close Gripper
-        elif gripper_state == 2:
-            self.gripper_control.GripApple()
-            self.get_logger().info('Gripper closed')
-
-        else:
-            self.get_logger().warn('Invalid gripper state')
-
-
-        # Check if the action was canceled
-        if goal_handle.is_cancel_requested:
-            goal_handle.canceled()
-            result.result = False
-        else:
-            # Set the result
-            result.result = True  
-            goal_handle.succeed()
-        
-        return result
+            # Check if the action was canceled
+            if goal_handle.is_cancel_requested:
+                goal_handle.canceled()
+                result.result = False
+            else:
+                # Set the result
+                result.result = True  
+                goal_handle.succeed()
+            
+            return result
     
-        
+
+
+
 
 
 

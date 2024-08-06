@@ -1,0 +1,5 @@
+string preset_name # goal
+---
+bool result # result
+---
+string feedback # feedback

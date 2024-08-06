@@ -20,6 +20,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ArmControl.msg"
   "msg/Tank.msg"
   "action/MoveArm.action"
+  "action/ArmPreset.action"
   DEPENDENCIES geometry_msgs sensor_msgs
 )
 
