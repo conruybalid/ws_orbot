@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'arm_location_service = image_processing.arm_location_service:main',
+            'legacy_arm_location = image_processing.legacy_arm_location:main',
             'zed_location_service = image_processing.zed_location_service:main'
         ],
     },

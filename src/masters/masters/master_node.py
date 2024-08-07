@@ -34,7 +34,7 @@ class MasterNode(Node):
             home (str): The name of the home position preset in use ('Home' or 'Home Right')
 
     """
-    def __init__(self, tank: bool = False):
+    def __init__(self, tank: bool = False, legacy: bool = False):
         """
         Init fuction for the MasterNode class.
         calls the init function of the parent class (Node) and initializes the subscriptions, publishers and action clients.
@@ -45,9 +45,12 @@ class MasterNode(Node):
 
         self.get_logger().info('Initializing Master Node')
 
-        self.zed_client = self.create_client(GetLocation, 'zed_location_service')
-        while not self.zed_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().warn('zed_location_service not available, waiting again...')
+        if not legacy:
+            self.zed_client = self.create_client(GetLocation, 'zed_location_service')
+            while not self.zed_client.wait_for_service(timeout_sec=1.0):
+                self.get_logger().warn('zed_location_service not available, waiting again...')
+        else:
+            self.get_logger().info('Legacy Camera Activated')
 
         self.arm_client = self.create_client(GetLocation, 'Arm_Locate_Apple_Service')
         while not self.arm_client.wait_for_service(timeout_sec=1.0):
@@ -193,8 +196,8 @@ class MasterNode(Node):
         Will ask the zed_location_service for the location of the apple relative to the base of the arm.
         Then it will move the arm to that location.
         """
-        self.get_logger().info('Asking Zed Camera for Apple Location')
-        #for _ in range(3):     
+        self.get_logger().debug('Asking Zed Camera for Apple Location')
+             
         error_status, point = self.call_zed_service()
         
         if error_status == 3:
@@ -250,10 +253,10 @@ class MasterNode(Node):
         tolerance = 0.02
         apple_coordinates = None
         while (apple_coordinates == None or not ((apple_coordinates.x <= tolerance and apple_coordinates.x >= -tolerance) and (apple_coordinates.y <= tolerance and apple_coordinates.y >= -tolerance))):
-            rclpy.spin_once(self)
 
             move_msg = ArmControl()
 
+            self.get_logger().info('Asking Arm Camera for Apple Location')
             error_status, apple_coordinates = self.call_arm_service()
 
             if error_status != 0:
@@ -421,6 +424,54 @@ class MasterNode(Node):
     
         return
     
+    def legacy(self):
+        """
+        This function:
+        centers the apple using the arm camera
+        Then it reaches for the apple
+        Then it grabs the apple and deposits it in the basket
+        """
+
+        self.get_logger().info('Master Node Routine Started (one camera)')
+        
+
+        try:
+            while True:
+
+                if self.tank:
+                    self.get_logger().info('Moving on...')
+                    self.publish_tank_commands(-200, -200)
+                    time.sleep(3)
+                    self.publish_tank_commands(0, 0)
+                
+                while True:
+                    
+                    # Center the apple
+                    self.get_logger().info('Centering Apple')
+                    if not self.center_apple():
+                        time.sleep(2)
+                        break
+                    
+                    self.grab_apple()
+
+                    self.send_preset_goal(self.home)
+
+
+        except KeyboardInterrupt:
+            self.get_logger().warn('Routine Aborted')
+
+        finally:
+            if self.tank:
+                # Stop tank
+                self.publish_tank_commands(0, 0)
+
+            # Return to home position
+            self.send_preset_goal('Home')
+
+    
+        return
+   
+    
 
     """
     TESTING ROUTINE
@@ -484,6 +535,7 @@ def parse_args():
     import argparse
     parser = argparse.ArgumentParser(description='Master Node')
     parser.add_argument('--tank', action='store_true', help='Run the Tank wheels')
+    parser.add_argument('--legacy', action='store_true', help='Run the legacy routine (One Camera with Red Filter)')
     parser.add_argument('--test', action='store_true', help='Run the Test Routine')
     parsed_args, unknown = parser.parse_known_args()
     return parsed_args, unknown
@@ -499,10 +551,12 @@ def main(args=None):
     """
     parsed_args, unknown = parse_args()
     rclpy.init(args=unknown)
-    node = MasterNode(parsed_args.tank)
+    node = MasterNode(parsed_args.tank, parsed_args.legacy)
     rclpy.spin_once(node, timeout_sec=1.0)
     if parsed_args.test:
         node.test()
+    elif parsed_args.legacy:
+        node.legacy()
     else:
         node.run() # Run the main routine       
     node.get_logger().info('Destroying Master Node')
