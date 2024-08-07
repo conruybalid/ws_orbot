@@ -385,6 +385,7 @@ class MasterNode(Node):
         Then it centers the apple using the arm camera
         Then it reaches for the apple
         Then it grabs the apple and deposits it in the basket
+        if tank is active, it moves the tank forward until reachable apples are found
         """
 
         self.get_logger().info('Master Node Routine Started')
@@ -426,10 +427,12 @@ class MasterNode(Node):
     
     def legacy(self):
         """
+        This is a legacy routine that uses the red filter camera to locate the apple using one camera
         This function:
         centers the apple using the arm camera
         Then it reaches for the apple
         Then it grabs the apple and deposits it in the basket
+        if tank is active, it moves the tank forward for 3 seconds when no apples are found
         """
 
         self.get_logger().info('Master Node Routine Started (one camera)')
