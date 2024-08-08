@@ -63,3 +63,13 @@ result # True or False
 ---
 feedback # feedback string
 ```
+
+### ArmPreset
+
+```
+preset_name # string
+---
+result # True or False
+---
+feedback # feedback string
+```
