@@ -2,16 +2,16 @@
 
 ## Usage
 
+Currently, only depth vision works on the Jetson. To launch, use
+```bash
+ros2 launch kinova_vision kinova_vision.launch.py launch_color:=false
+```
+
 In the case that there are any useful updates to the original repostitory:
 In ~/ws_orbot/src/ros2_kortex_vision
 ```bash
 git fetch upstream
 git merge upstream/ros2
-```
-
-Currently, only depth vision works on the Jetson. To launch, use
-```bash
-ros2 launch kinova_vision kinova_vision.launch.py launch_color:=false
 ```
 
 # Kinova Vision module package
