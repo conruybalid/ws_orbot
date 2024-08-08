@@ -14,17 +14,23 @@ It uses the ultralytics/yolov5 repository to load the model
 Then, an image can be passed to the model to get the coordinates of the apples in the image
 """
 
+"""
+When loading the model from the internet, it will attempt to uninstall torch/torchvision
+ and install the "correct versions". This will not work ideally on the Jetson.
+
+ Check the README for instructions to install the versions of torch and torchvision that work with the Orin GPU
+"""
 
 class AI_model:
     def __init__(self, model_path='./src/image_processing/resource/87Epochbest.pt'):
-        self.model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path)
+        self.model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path) # DO NOT USE FORCE_RELOAD
 
-    def GetAppleCoordinates(self, image: np.ndarray, confidence_threshold=0.5):
+    def GetAppleCoordinates(self, image: np.ndarray, confidence_threshold: float=0.5) -> List[Tuple[int, int, int, int, float]]:
         """
         This function takes an image as input and return a list of tuples containing [x1, y1, x2, y2] (box corners)
           sorted by confidence of the detected apples
         """
-        results = self.model(image)
+        results = self.model(image) # Get the results from the model
 
         apple_pixels = results.xyxy[0] # apple_pixels auto sorted by confidence
 
@@ -33,7 +39,7 @@ class AI_model:
             for x1, y1, x2, y2, conf, *_ in apple_pixels 
             if conf.item() > confidence_threshold]
 
-        return apple_coordinates
+        return apple_coordinates # [Tuple[x1, y1, x2, y2, confidence], ...] top left and bottom right corners of the box and confidence
     
 
 def main():

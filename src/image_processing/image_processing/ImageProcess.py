@@ -109,17 +109,7 @@ def processImage(image, imageNum=0):
     else:
         apple_centroids = None
         largest_contour_index = None
-
-    # Display the image
-    # cv2.imshow('Apples', viewing_mask)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
-
     
-
-    # Set the response message
-    num_apples = len(contours)
     # Create a list of geometry msg points
     apple_points = []
     if not apple_centroids is None:
@@ -134,7 +124,15 @@ def processImage(image, imageNum=0):
 
 
 if __name__ == "__main__":
-    image_path = os.path.expanduser('~/ws_orbot/apple2.JPG')  # Replace with your image path
+    image_path = os.path.expanduser('~/ws_orbot/TestPics/apple2.JPG')  # Replace with your image path
     cv_bridge = CvBridge()
     image = cv2.imread(image_path)
-    processImage(image, 1)
+    index, apple_points, mask = processImage(image)
+
+    print(f'Index of largest apple: {index}')
+    print(f'Apple points: {apple_points}')
+    
+    # Display the image
+    cv2.imshow('Apples', mask)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
