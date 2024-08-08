@@ -1,5 +1,10 @@
 #! /usr/bin/env python3
 
+
+###
+# Code adapted from the Kinova Kortex SDK Python examples
+###
+
 ###
 # KINOVA (R) KORTEX (TM)
 #
@@ -89,7 +94,7 @@ def move_to_home_position(base):
         print("Timeout on action notification wait")
     return finished
 
-def move_to_preset_position(base, position_name):
+def move_to_preset_position(base, position_name: str):
     """
     Moves the Robot Arm to a preset position defined in web app (under actions)
     """
@@ -138,11 +143,12 @@ def move_to_preset_position(base, position_name):
     return finished
 
 
-def move_trajectory(base, base_cyclic, waypointsDefinition):
+def move_trajectory(base, base_cyclic, waypointsDefinition: Base_pb2.CartesianWaypoint): # type: ignore
     """
     Moves the robot arm to the specified cartesian waypoint
     """
 
+    # Set up
     base_servo_mode = Base_pb2.ServoingModeInformation()
     base_servo_mode.servoing_mode = Base_pb2.SINGLE_LEVEL_SERVOING
     base.SetServoingMode(base_servo_mode)
@@ -238,7 +244,7 @@ def main():
             # Get the coordinates from the user
             coordinates = get_coordinates_from_user()
 
-                        # Assuming base_cyclic is your BaseCyclic object and you've already connected to the robot
+            # Assuming base_cyclic is your BaseCyclic object and you've already connected to the robot
             feedback = base_cyclic.RefreshFeedback()
 
             # Update the waypointsDefinition with the new coordinates
@@ -278,7 +284,7 @@ def test():
 
         success &= move_to_home_position(base)
 
-        success &= move_to_preset_position(base, "Full Close")
+        success &= move_to_preset_position(base, "Home Right")
 
         return 0 if success else 1
 

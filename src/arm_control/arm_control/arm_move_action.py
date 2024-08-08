@@ -26,19 +26,24 @@ class MoveArmServer(Node):
     moves the arm to the specified position, and controls the gripper based on the gripper state
     specified in the goal.
 
+    It also handles the execution of the ArmPreset action, which moves the arm to a named preset position.
+
     Args:
         router: The router object used for communication with the robot.
 
     Attributes:
-        action_server (ActionServer): The action server instance for the move_arm_action.
+        action_server (ActionServer): The action server instance for the move_arm_waypoint.
+        preset_action_server (ActionServer): The action server instance for the preset action.
         router: The router object used for communication with the robot.
         gripper_control (GripperCommand): The gripper control instance.
+        self.move_tolerance (float): The tolerance for the arm to be in the desired position.
+        self.mutex (Lock): A mutex to avoid doing waypoint and preset action callbacks at the same time.
     """
 
     def __init__(self, router):
         super().__init__('move_arm_server')
         
-        self.mutex = Lock()
+        self.mutex = Lock() # To avoid doing waypoint and preset action callbacks at the same time
 
         self.action_server = ActionServer(
             self,
@@ -69,7 +74,9 @@ class MoveArmServer(Node):
 
         self.gripper_control = GripperCommand(self.router)
 
-    def FormatWaypoint(self, waypointInformation: MoveArm.Goal, feedback: BaseCyclic_pb2.Feedback):
+
+
+    def FormatWaypoint(self, waypointInformation: MoveArm.Goal, feedback: BaseCyclic_pb2.Feedback) -> Base_pb2.CartesianWaypoint: # type: ignore
         """
         Format the waypoint information based on the reference frame.
 
@@ -117,7 +124,7 @@ class MoveArmServer(Node):
         
         return waypoint
 
-    def execute_callback(self, goal_handle):
+    def execute_callback(self, goal_handle) -> MoveArm.Result:
         """
         Execute the MoveArm action.
 
@@ -130,12 +137,12 @@ class MoveArmServer(Node):
         Returns:
             MoveArm.Result: The result of the action execution. (True if successful, False otherwise)
         """
-        with self.mutex:
+        with self.mutex: # To avoid doing waypoint and preset action callbacks at the same time
             goal = goal_handle.request.goal
             feedback = MoveArm.Feedback()
             result = MoveArm.Result()
 
-            
+            # Seperate out the different parts of the goal
             point = goal.position
             gripper_state = goal.gripper_state
         
@@ -162,21 +169,27 @@ class MoveArmServer(Node):
                 self.get_logger().error(f'Error in trajectory: {point.x}, {point.y}, {point.z}')
                 goal_handle.abort()
                 result.result = False
+                return result
 
+            # Check if the new position of the arm is what was expected
+
+            # Get the new position of the arm
             feedback = base_cyclic.RefreshFeedback()
 
             arm_z = feedback.base.tool_pose_x
             arm_x = feedback.base.tool_pose_y
             arm_y = feedback.base.tool_pose_z
 
-
             self.get_logger().info('Moved to position: %f, %f, %f' % (arm_x, arm_y, arm_z))
 
+            # If the reference frame is tool, calculate desired position with respect to the base
             if goal.reference_frame == Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL:
                 point.x += old_arm_x
                 point.y += old_arm_y
                 point.z += old_arm_z
 
+
+            # Check if the arm actually reached the desired position
             if ((arm_x < point.x - self.move_tolerance or arm_x > point.x + self.move_tolerance)
                 or (arm_y < point.y - self.move_tolerance or arm_y > point.y + self.move_tolerance)
                 or (arm_z < point.z - self.move_tolerance or arm_z > point.z + self.move_tolerance)):
@@ -198,7 +211,7 @@ class MoveArmServer(Node):
 
             # Close Gripper
             elif gripper_state == 2:
-                self.gripper_control.GripApple()
+                self.gripper_control.GripApple() # Closes the gripper incrementally to avoid crushing apple
                 self.get_logger().info('Gripper closed')
 
             else:
@@ -217,13 +230,19 @@ class MoveArmServer(Node):
             return result
     
 
-    def execute_preset_callback(self, goal_handle):
+    def execute_preset_callback(self, goal_handle) -> ArmPreset.Result:
         """
         Moves to a named preset position defined in the web UI (under action)
         WARNING: Angle presets do not check for collisions, use with caution
+
+        Args:
+            goal_handle (ActionServer.GoalHandle): The goal handle containing the goal, feedback, and result.
+
+        Returns:
+            MoveArm.Result: The result of the action execution. (True if successful, False otherwise)
         """
 
-        with self.mutex:
+        with self.mutex: # To avoid doing waypoint and preset action callbacks at the same time
             preset = goal_handle.request.preset_name
             feedback = ArmPreset.Feedback()
             result = ArmPreset.Result()
@@ -240,6 +259,7 @@ class MoveArmServer(Node):
                 self.get_logger().error(f'Error in moving to preset: {preset}')
                 goal_handle.abort()
                 result.result = False
+                return result
             
             if not success:
                 self.get_logger().error(f'Error in moving to preset: {preset}')
@@ -269,7 +289,7 @@ def main(args=None):
     print(f'arguments: {args}')
     rclpy.init(args=args)
     arm_args = utilities.parseConnectionArguments()
-    with utilities.DeviceConnection.createTcpConnection(arm_args) as router:
+    with utilities.DeviceConnection.createTcpConnection(arm_args) as router: # create connection to robot
         action_server = MoveArmServer(router)
         rclpy.spin(action_server)
     action_server.destroy_node()
