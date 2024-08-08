@@ -460,12 +460,13 @@ class MasterNode(Node):
                     time.sleep(3)
                     self.publish_tank_commands(0, 0)
 
-                self.get_logger().info('Centering Apple')                
+                                
                 while True: # Broken if Go to Apple fails (no apples found)
+                    
+                    self.get_logger().info('Centering Apple')
                     if not self.center_apple():
                         break
-                    
-                    time.sleep(2)
+
                     self.get_logger().info('Centered Apple, proceeding to grab')
                     
                     self.grab_apple()
