@@ -105,7 +105,7 @@ class XboxPublisher(Node):
     FUNCTIONS TO SEND GOALS TO THE ARM ACTION SERVERS
     """
 
-    def send_preset_goal(self, preset: str -> bool):
+    def send_preset_goal(self, preset: str) -> bool:
         """
         Sends an preset goal to the arm action server.
         Waits for the server to respond and returns the result.

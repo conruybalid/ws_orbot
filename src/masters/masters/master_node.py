@@ -15,6 +15,8 @@ from kortex_api.autogen.messages import Base_pb2
 
 import time
 
+from typing import Tuple
+
 
 class MasterNode(Node):
     """
@@ -78,7 +80,7 @@ class MasterNode(Node):
     """
     SERVICE CALL FUNCTIONS
     """
-    def call_zed_service(self) -> tuple[int, Point]:
+    def call_zed_service(self) -> Tuple[int, Point]:
         """
         Calls the zed location service to get the location of the apple in the image.
         """
@@ -90,7 +92,7 @@ class MasterNode(Node):
 
         return response.error_status, response.apple_coordinates
     
-    def call_arm_service(self) -> tuple[int, Point]:
+    def call_arm_service(self) -> Tuple[int, Point]:
         """
         Calls the arm location service to get the location of the apple in the image.
         """
@@ -124,7 +126,7 @@ class MasterNode(Node):
     These Functions are used to send arm movement goals to the arm action server.
     """
 
-    def format_move_goal(self, position: tuple[float,float,float]=[0.0,0.0,0.0], angle: tuple[float,float,float]=[0.0,0.0,0.0], gripper_state: int=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL) -> MoveArm.Goal:
+    def format_move_goal(self, position: Tuple[float,float,float]=[0.0,0.0,0.0], angle: Tuple[float,float,float]=[0.0,0.0,0.0], gripper_state: int=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL) -> MoveArm.Goal:
         """
         Quickly formates a goal that can be sent to the arm action server.
         """
@@ -276,6 +278,9 @@ class MasterNode(Node):
             # If the Arm is not currently centered on the apple, overwrite z coordinate with 0
             if not ((apple_coordinates.x <= tolerance and apple_coordinates.x >= -tolerance) and (apple_coordinates.y <= tolerance and apple_coordinates.y >= -tolerance)):
                 move_msg.position.z = 0.0
+            else:
+                self.get_logger().info(f'Apple Centered. Moving to {apple_coordinates.x}, {apple_coordinates.y}, {apple_coordinates.z}')
+            
             move_msg.angle.x = 0.0
             move_msg.angle.y = 0.0
             move_msg.angle.z = 0.0        
@@ -456,12 +461,18 @@ class MasterNode(Node):
                     self.publish_tank_commands(0, 0)
 
                 self.get_logger().info('Centering Apple')                
-                while self.center_apple(): # Broken if Go to Apple fails (no apples found)
+                while True: # Broken if Go to Apple fails (no apples found)
+                    if not self.center_apple():
+                        break
+                    
+                    time.sleep(2)
                     self.get_logger().info('Centered Apple, proceeding to grab')
                     
                     self.grab_apple()
 
                     self.send_preset_goal(self.home)
+                
+                time.sleep(2)
 
 
         except KeyboardInterrupt:
