@@ -11,3 +11,8 @@ The main routine consists of
 - disposing of the apple
 Once it completes its task, it then destroys itself.
 
+Arguments:
+- --tank (moves the tank when no apples are found)
+- --test (runs the test routine)
+- --legacy (runs the legacy routine: one camera with red filter)
+

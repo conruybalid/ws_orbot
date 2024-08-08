@@ -8,6 +8,8 @@ from custom_interfaces.action import ArmPreset
 from custom_interfaces.srv import GetLocation
 from custom_interfaces.msg import Tank
 
+from geometry_msgs.msg import Point
+
 
 from kortex_api.autogen.messages import Base_pb2
 
@@ -23,7 +25,7 @@ class MasterNode(Node):
     Attributes:
 
         Service Clients:
-            zed_client (ServiceClient): A service client for the zed location service. Returns the location of apples from the zed camera
+            zed_client (ServiceClient): A service client for the zed location service. Returns the location of apples from the zed camera (not active in legacy mode)
             arm_client (ServiceClient): A service client for the arm location service. Returns the location of apples from the arm camera
 
         Action Clients:
@@ -32,6 +34,10 @@ class MasterNode(Node):
 
         Other Attributes:
             home (str): The name of the home position preset in use ('Home' or 'Home Right')
+
+    args:
+        tank (bool): If true, the tank wheels will be used to move the robot.
+        legacy (bool): If true, the legacy routine will be used (One Camera with Red Filter)
 
     """
     def __init__(self, tank: bool = False, legacy: bool = False):
@@ -72,32 +78,35 @@ class MasterNode(Node):
     """
     SERVICE CALL FUNCTIONS
     """
-    def call_zed_service(self):
+    def call_zed_service(self) -> tuple[int, Point]:
         """
         Calls the zed location service to get the location of the apple in the image.
         """
-        request = GetLocation.Request()
+        request = GetLocation.Request() # Create a request object
 
-        future = self.zed_client.call_async(request)
-        rclpy.spin_until_future_complete(self, future)
-        response = future.result()
+        future = self.zed_client.call_async(request) # Call the service
+        rclpy.spin_until_future_complete(self, future) # Wait for the service to respond
+        response = future.result() # Get the response
+
         return response.error_status, response.apple_coordinates
     
-    def call_arm_service(self):
+    def call_arm_service(self) -> tuple[int, Point]:
         """
         Calls the arm location service to get the location of the apple in the image.
         """
-        request = GetLocation.Request()
+        request = GetLocation.Request() # Create a request object
 
-        future = self.arm_client.call_async(request)
-        rclpy.spin_until_future_complete(self, future)
-        response = future.result()
+        future = self.arm_client.call_async(request) # Call the service
+        rclpy.spin_until_future_complete(self, future) # Wait for the service to respond
+        response = future.result()  # Get the response
+
         return response.error_status, response.apple_coordinates
     
 
-    def process_service_error(self, error_code):
+    def process_service_error(self, error_code: int) -> None:
         """
         Processes the error code received from either camera service.
+        Outputs the appropriate message based on the error code.
         """
         if error_code == 1:
             self.get_logger().info('No apples found')
@@ -115,7 +124,7 @@ class MasterNode(Node):
     These Functions are used to send arm movement goals to the arm action server.
     """
 
-    def format_move_goal(self, position=[0.0,0.0,0.0], angle=[0.0,0.0,0.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL):
+    def format_move_goal(self, position: tuple[float,float,float]=[0.0,0.0,0.0], angle: tuple[float,float,float]=[0.0,0.0,0.0], gripper_state: int=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL) -> MoveArm.Goal:
         """
         Quickly formates a goal that can be sent to the arm action server.
         """
@@ -131,34 +140,32 @@ class MasterNode(Node):
 
         return goal_msg
     
-    def send_move_goal(self, goal_msg):
+    def send_move_goal(self, goal_msg: MoveArm.Goal) -> bool:
         """
         Sends an waypoint goal to the arm action server.
         Waits for the server to respond and returns the result.
         """
 
-        self.arm_action_client.wait_for_server()
-        future = self.arm_action_client.send_goal_async(goal_msg)
-        #future.add_done_callback(self.goal_response_callback)
-        rclpy.spin_until_future_complete(self, future)
+        self.arm_action_client.wait_for_server() # Wait for the server to be ready
+        future = self.arm_action_client.send_goal_async(goal_msg) # Send the goal
+        rclpy.spin_until_future_complete(self, future) # Wait for the server to respond
 
-        goal_handle = future.result()
+        goal_handle = future.result() # See if the goal was accepted
+
         if not goal_handle.accepted:
             self.get_logger().error('Move Goal rejected :(')
             return False
 
         self.get_logger().debug(f'Move Goal sent: \n{goal_msg}')
 
-        result_future = goal_handle.get_result_async()
-        #result_future.add_done_callback(self.get_result_callback)
-        rclpy.spin_until_future_complete(self, result_future)
-        result = result_future.result().result
+        result_future = goal_handle.get_result_async() # Prepare to get the result
+        rclpy.spin_until_future_complete(self, result_future) # Wait for the result
+        result = result_future.result().result # Get the result
         self.get_logger().debug(f'Move Result: {result.result}')
-
         
         return result.result
     
-    def send_preset_goal(self, preset: str):
+    def send_preset_goal(self, preset: str) -> bool:
         """
         Sends an preset goal to the arm preset action server.
         Waits for the server to respond and returns the result.
@@ -191,7 +198,7 @@ class MasterNode(Node):
     GO TO APPLE FUNCTIONS
     """
    
-    def Go_to_Apple(self):
+    def Go_to_Apple(self) -> bool:
         """
         Will ask the zed_location_service for the location of the apple relative to the base of the arm.
         Then it will move the arm to that location.
@@ -242,7 +249,7 @@ class MasterNode(Node):
     These functions are used to center the apple in the frame.
     """
 
-    def center_apple(self):
+    def center_apple(self) -> bool:
         """
         Will ask the arm_location_service for the location of the apple relative to the arm.
         Then it will move the arm to attempt to center the apple in the frame.
@@ -302,13 +309,16 @@ class MasterNode(Node):
 
         try:
             # Pick Apple
+            # Perform the movements to pick up the apple
             if not (
             self.send_move_goal(self.format_move_goal(position=[0.0, 0.025, 0.0], gripper_state=2, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL))
             and self.send_move_goal(self.format_move_goal(angle=[0.0, 0.0, 100.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL))
             and self.send_move_goal(self.format_move_goal(position=[0.0, 0.0, -0.2], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_TOOL))
             ):
+                # Once of the above movements failed
                 self.get_logger().error('failed to perform pick apple movements')
             else:
+                # All movements were successful
                 self.get_logger().info('finished pick apple movements')
 
             
@@ -324,7 +334,7 @@ class MasterNode(Node):
             else:
                 self.send_move_goal(self.format_move_goal(gripper_state=1))
                 self.get_logger().info('Dropped off apple')
-                #self.send_move_goal(self.format_move_goal(position=[0.0, 0.5, 0.5], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+
 
 
             
@@ -336,14 +346,14 @@ class MasterNode(Node):
 
         return
     
-    def publish_tank_commands(self, L, R):
+    def publish_tank_commands(self, L: int, R: int):
         """
         Publishes the tank movement commands to the tank controller node.
         """
-        msg = Tank()
+        msg = Tank() # Create a message object
         msg.left_speed = L
         msg.right_speed = R
-        self.tank_comand_publisher.publish(msg)
+        self.tank_comand_publisher.publish(msg) # Publish the message
         self.get_logger().debug(f"Publishing: {msg.left_speed}, {msg.right_speed}")
         return
 
@@ -354,8 +364,9 @@ class MasterNode(Node):
         self.get_logger().info('Moving Tank')
         try:                    
             error_status, point = self.call_zed_service()
+            
             fail_count = 0
-            while error_status != 0 and fail_count < 3:
+            while error_status != 0 and fail_count < 3: # If there is an error in image processing 3 times in a row, then stop. Or stop if apple is found (error_status == 0)
                 self.publish_tank_commands(-200, -200)
                 error_status, point = self.call_zed_service()
                 if error_status == 0 or error_status == 1:
@@ -368,13 +379,13 @@ class MasterNode(Node):
         finally:
             self.get_logger().info('Stopping Tank')
             self.publish_tank_commands(0, 0)
-            self.publish_tank_commands(0, 0) # IDK, twice for extra measure I guess
+            self.publish_tank_commands(0, 0) # Twice for extra measure I guess (in case the first one doesn't go through)
 
         return
 
 
     """
-    MAIN ROUTINE
+    MAIN ROUTINES
     This is the main routine of the master node.
     """
 
@@ -392,16 +403,13 @@ class MasterNode(Node):
         
 
         try:
-            while True:
+            while True: # only broken on keyboard interrupt or error
 
                 if self.tank:
                     self.get_logger().info('Moving on...')
                     self.move_tank()
                 
-                while True:
-                    
-                    if not self.Go_to_Apple():
-                        break
+                while self.Go_to_Apple(): # Broken if Go to Apple fails (no apples found)
 
                     # Center the apple
                     self.get_logger().info('Centering Apple')
@@ -446,14 +454,10 @@ class MasterNode(Node):
                     self.publish_tank_commands(-200, -200)
                     time.sleep(3)
                     self.publish_tank_commands(0, 0)
-                
-                while True:
-                    
-                    # Center the apple
-                    self.get_logger().info('Centering Apple')
-                    if not self.center_apple():
-                        time.sleep(2)
-                        break
+
+                self.get_logger().info('Centering Apple')                
+                while self.center_apple(): # Broken if Go to Apple fails (no apples found)
+                    self.get_logger().info('Centered Apple, proceeding to grab')
                     
                     self.grab_apple()
 
@@ -482,54 +486,28 @@ class MasterNode(Node):
     """
     
     def test(self):
+        """
+        Feel free to modify this function to test the functionality of the master node.
+        """
         self.get_logger().info('Testing')
     
-        # self.send_move_goal(self.foward_home)
-        # self.send_move_goal(self.right_home)
+        self.send_move_goal(self.foward_home)
+        self.send_move_goal(self.right_home)
 
-        # self.send_move_goal(self.format_move_goal(position=[-0.4, 0.2, 0.0], angle=[0.0, 90.0, 180.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
+        self.send_move_goal(self.format_move_goal(position=[-0.4, 0.2, 0.0], angle=[0.0, 90.0, 180.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
 
-        # self.send_move_goal(self.foward_home)
-        try:
-            while True:
-
-                if self.tank:
-                    self.get_logger().info('Moving on...')
-                    self.move_tank()
-                    time.sleep(5)
-                
-                while True:
-                    
-                    if not self.Go_to_Apple():
-                        time.sleep(10)
-                        break
-
-                    # Center the apple
-                    self.get_logger().info('Centering Apple')
-                    if not self.center_apple():
-                        time.sleep(10)
-                        continue
-                    
-                    self.grab_apple()
-
-
-        except KeyboardInterrupt:
-            self.get_logger().warn('Routine Aborted')
-
-        finally:
-            if self.tank:
-                # Stop tank
-                self.publish_tank_commands(0, 0)
-
-            # Return to home position
-            self.send_move_goal(self.home)
+        self.send_move_goal(self.foward_home)
 
         
 
-
         self.get_logger().info('Test Complete')
         return
+    
 
+
+"""
+Parse Arguments Function
+"""
 
 def parse_args():
     """
@@ -556,15 +534,20 @@ def main(args=None):
     rclpy.init(args=unknown)
     node = MasterNode(parsed_args.tank, parsed_args.legacy)
     rclpy.spin_once(node, timeout_sec=1.0)
+    # Check what routine to run
     if parsed_args.test:
         node.test()
     elif parsed_args.legacy:
         node.legacy()
     else:
-        node.run() # Run the main routine       
+        node.run() # Run the main routine  
+
     node.get_logger().info('Destroying Master Node')
+    # Destroy action clients
     node.arm_action_client.destroy()
     node.arm_presets_client.destroy()
+
+    # Destroy node and shutdown rclpy
     node.destroy_node()
     rclpy.shutdown()
 
