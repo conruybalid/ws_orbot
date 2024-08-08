@@ -14,6 +14,7 @@ import inputs
 import importlib
 
 
+# Function to map joystick values to tank commands
 def map_value(value, in_min, in_max, out_min, out_max):
     return int((value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)
 
@@ -49,7 +50,7 @@ class XboxPublisher(Node):
 
     def check_controller(self):
         try:
-            events = inputs.get_gamepad()
+            events = inputs.get_gamepad() # Get the gamepad inputs
         except Exception as e:
             self.get_logger().warn(str(e))
             self.right_speed = 0
@@ -59,6 +60,7 @@ class XboxPublisher(Node):
             time.sleep(3)
             importlib.reload(inputs) # Re-import the devices module to reinitialize
             return
+        
         for event in events:
             if event.ev_type == 'Key' or event.ev_type == 'Absolute':
                 if event.code == 'BTN_SOUTH' and event.state == 1:
@@ -98,7 +100,12 @@ class XboxPublisher(Node):
 
         return
     
-    def send_preset_goal(self, preset: str):
+
+    """
+    FUNCTIONS TO SEND GOALS TO THE ARM ACTION SERVERS
+    """
+
+    def send_preset_goal(self, preset: str -> bool):
         """
         Sends an preset goal to the arm action server.
         Waits for the server to respond and returns the result.
@@ -122,11 +129,10 @@ class XboxPublisher(Node):
         rclpy.spin_until_future_complete(self, result_future)
         result = result_future.result().result
         self.get_logger().debug(f'Move Result: {result.result}')
-
         
         return result.result
     
-    def send_grip_goal(self, gripper_state: int):
+    def send_grip_goal(self, gripper_state: int) -> bool:
         """
         Sends a gripper goal to the arm waypoint action server.
         Waits for the server to respond and returns the result.
@@ -153,8 +159,13 @@ class XboxPublisher(Node):
         result = result_future.result().result
         self.get_logger().debug(f'Move Result: {result.result}')
 
-    
-    def publish_tank(self, L, R):
+        return result.result
+
+
+    """
+    FUNCTION TO PUBLISH TANK COMMANDS
+    """
+    def publish_tank(self, L: int, R: int):
         if L < 100 and L > -100:
             L = 0
         if R < 100 and R > -100:
@@ -175,7 +186,6 @@ def main(args=None):
             if node.manual_control:
                 node.publish_tank(node.left_speed, node.right_speed)
 
-            #rclpy.spin_once(node)
 
     except KeyboardInterrupt:
         pass
