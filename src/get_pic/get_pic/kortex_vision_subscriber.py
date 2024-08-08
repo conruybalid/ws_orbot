@@ -15,7 +15,6 @@ class VideoSubscriber(Node):
         super().__init__('video_subscriber')
         self.arm_rgb_sub = self.create_subscription(
             Image,
-            #'camera/color/image_raw',
             'camera/color/image_raw',
             self.arm_image_callback,
             10
@@ -48,7 +47,7 @@ class VideoSubscriber(Node):
         # Add a blue border
         cv2.rectangle(black_image, (0, 0), (width-1, height-1), border_color, thickness=border_thickness)
 
-
+        # Initialize the images with black images
         self.images = [black_image, black_image, black_image, black_image]
 
         self.get_logger().info('Video subscriber node has been initialized')

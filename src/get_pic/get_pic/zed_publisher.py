@@ -27,7 +27,7 @@ class ZedPublisher(Node):
             runtime_parameters (sl.RuntimeParameters): ZED runtime parameters
             image (sl.Mat): ZED image object
             depth (sl.Mat): ZED depth object
-            point_cloud (sl.Mat): ZED point cloud object
+            point_cloud (sl.Mat): ZED point cloud object (xyz only)
 
 
     """
@@ -121,7 +121,7 @@ class ZedPublisher(Node):
                 self.get_logger().warn('self.point_cloud is None')
     
     
-    def sl_mat_to_ros_image(self, zed_image: sl.Mat):
+    def sl_mat_to_ros_image(self, zed_image: sl.Mat) -> Image:
         """
         Convert a ZED Mat image to a ROS2 Image message
         """
@@ -146,7 +146,7 @@ class ZedPublisher(Node):
         return ros_image_msg
          
     
-    def zed_point_cloud_to_ros_point_cloud2(self, zed_point_cloud):
+    def zed_point_cloud_to_ros_point_cloud2(self, zed_point_cloud) -> PointCloud2:
         """
         Convert a ZED point cloud to a ROS2 PointCloud2 message
         Only sends xyz data for now

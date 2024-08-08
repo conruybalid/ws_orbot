@@ -1,6 +1,11 @@
 import pyzed.sl as sl
 import cv2
 
+"""
+This script was used to test the ZED camera and get 3D coordinates from a mouse click on the color image.
+"""
+
+
 # Initialize the ZED camera
 zed = sl.Camera()
 init_params = sl.InitParameters()

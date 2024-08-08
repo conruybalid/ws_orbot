@@ -82,7 +82,7 @@ class VideoSubscriber(Node):
         print(np_points[100][100])
 
 
-    def ros_point_cloud2_to_zed_point_cloud(self, ros_point_cloud):
+    def ros_point_cloud2_to_zed_point_cloud(self, ros_point_cloud) -> np.ndarray:
         """
         Convert a ROS2 PointCloud2 message to a NumPy array of points (xyz data only)
         """

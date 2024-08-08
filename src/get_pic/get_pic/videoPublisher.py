@@ -9,23 +9,18 @@ import time
 
 class VideoPublisher(Node):
     """
-    This class is a ROS2 node that collects and publishes images from the Arm Camera 
+    This class is a ROS2 node that collects and publishes color images from the Arm Camera
 
     Attributes:
 
         publishers:
             rgbpublisher_ (publisher): publishes rgb image to image_topic
-            depthpublisher_ (publisher): publishes depth image to depth_topic (not working)
 
         Other Attributes:
             self.timer_ (timer): timer to publish images at a fixed rate
             rtsp_url (str): rtsp stream url
-            depth_url (str): rtsp stream url for depth
             video_stream_handler (VideoStreamHandler): object to handle video stream
-            depth_stream_handler (VideoStreamHandler): object to handle video stream for depth
-
             image_msg (Image): Image message to publish
-            depth_msg (Image): Image message to publish for depth
 
     """
 
@@ -37,9 +32,11 @@ class VideoPublisher(Node):
         
         # RTSP stream URL
         rtsp_url = "rtsp://192.168.1.10/color"
-        depth_url = 'rtsp://192.168.1.10/depth'
+
         # Create a VideoStream object
         self.video_stream_handler = VideoStreamHandler(rtsp_url)
+
+        # Check if the stream is opened successfully. If not, try to open it again
         i = 0
         while not self.video_stream_handler.cap.isOpened():
             self.get_logger().error(f'Failed to initialize video stream handler: attempt {i}')
@@ -51,8 +48,7 @@ class VideoPublisher(Node):
 
         self.get_logger().info('rtsp has been initialized')
 
-        self.image_msg = Image()
-        self.depth_msg = Image()
+        self.image_msg = Image() # Image message to publish
 
         self.get_logger().info('Video publisher node has been initialized')
 
@@ -63,12 +59,12 @@ class VideoPublisher(Node):
         Retrieves the latest frame from the video stream handlers and publishes it
         Depth image is not working
         """
-        # Create an Image message and publish it
+        # Get the latest frame from the video stream handler
         frame = self.video_stream_handler.get_latest_frame()
         if frame is not None:
+            # Create an Image message and publish it
             self.image_msg = CvBridge().cv2_to_imgmsg(frame)
             self.rgbpublisher_.publish(self.image_msg)
-            #self.get_logger().info('Image published')
         else:
             self.get_logger().warn('Failed to read frame from RTSP rgb stream')
 
