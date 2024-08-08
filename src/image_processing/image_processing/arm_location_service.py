@@ -128,7 +128,7 @@ class ImageProcessingService(Node):
                         # Get the average depth of the surrounding pixels in the depth image
                         average_depth = np.mean(self.depth_image[depth_y - 2: depth_y + 2, depth_x - 2: depth_x + 2])
 
-                        response.apple_coordinates.z = average_depth / 1000.0 - 0.15 # Convert the depth from mm to m and subtract distance from camera to gripper
+                        response.apple_coordinates.z = average_depth / 1000.0 - 0.12 # Convert the depth from mm to m and subtract distance from camera to gripper
 
                 else: # If no apples were found, return the failed_coordinates object and error_status 1
                     response.apple_coordinates = failed_coordinates

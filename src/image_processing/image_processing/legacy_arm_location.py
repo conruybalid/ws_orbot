@@ -106,7 +106,7 @@ class ImageProcessingService(Node):
                         average_depth = np.mean(self.depth_image[depth_y - 2: depth_y + 2, depth_x - 2: depth_x + 2])
 
                         # Convert from mm to m an subtract the distance from the camera to the gripper
-                        response.apple_coordinates.z = average_depth / 1000.0 - 0.15 
+                        response.apple_coordinates.z = average_depth / 1000.0 - 0.12 
                         
                         # Update error status to 0 (apple found)
                         response.error_status = 0

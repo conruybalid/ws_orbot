@@ -211,7 +211,7 @@ class MasterNode(Node):
         
         if error_status == 3:
             for _ in range(3):
-                time.sleep(0.5) 
+                time.sleep(1) 
                 error_status, point = self.call_zed_service()
                 if error_status != 3:
                     break
