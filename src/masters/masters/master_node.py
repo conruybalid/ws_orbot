@@ -465,6 +465,7 @@ class MasterNode(Node):
                     
                     self.get_logger().info('Centering Apple')
                     if not self.center_apple():
+                        self.send_preset_goal(self.home)
                         break
 
                     self.get_logger().info('Centered Apple, proceeding to grab')
