@@ -419,6 +419,7 @@ class MasterNode(Node):
                     # Center the apple
                     self.get_logger().info('Centering Apple')
                     if not self.center_apple():
+                        self.send_preset_goal(self.home)
                         continue
                     
                     self.grab_apple()
