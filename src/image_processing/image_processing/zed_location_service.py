@@ -140,13 +140,12 @@ class ZedLocation(Node):
                         response.apple_coordinates.x = x_distance
                         response.apple_coordinates.y = y_distance
                         response.apple_coordinates.z = z_distance
-                        
-                        # Reset the image and point cloud
-                        self.zed_image = None
-                        self.zed_pointcloud = None
 
 
                 if foundValidApple:
+                    # Reset the image and point cloud
+                    self.zed_image = None
+                    self.zed_pointcloud = None
                     return response
                 
                 else:

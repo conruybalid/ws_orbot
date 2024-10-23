@@ -453,7 +453,7 @@ class MasterNode(Node):
                 if i != 0:
                     self.get_logger().info('Moving on...')
                     self.publish_tank_commands(-200, -200)
-                    time.sleep(5)
+                    time.sleep(10)
                     self.publish_tank_commands(0, 0)
                     self.publish_tank_commands(0, 0) # Twice for good measure
 
