@@ -438,7 +438,56 @@ class MasterNode(Node):
 
     
         return
+            
+
+    def PickNScoot(self, picks):
+        """
+        This function:
+        is the same as run except it picks one apple then moves on "picks number of times 
+        """
+        self.get_logger().info('Pick N Scoot Routine Started')
+        
+
+        try:
+            for i in range(picks):
+                if i != 0:
+                    self.get_logger().info('Moving on...')
+                    self.publish_tank_commands(-200, -200)
+                    time.sleep(5)
+                    self.publish_tank_commands(0, 0)
+                    self.publish_tank_commands(0, 0) # Twice for good measure
+
+                time.sleep(1)
+
+                self.get_logger().info(f'picking iteration {i+1}')
+                if not self.Go_to_Apple():
+                    continue
+                
+                # Center the apple
+                self.get_logger().info('Centering Apple')
+                if not self.center_apple():
+                    self.send_preset_goal(self.home)
+                    continue
+                
+                self.grab_apple()
+
+
+        except KeyboardInterrupt:
+            self.get_logger().warn('Routine Aborted')
+
+        finally:
+            # Stop tank
+            self.publish_tank_commands(0, 0)
+
+            # Return to home position
+            self.send_preset_goal('Home')
+
     
+        return
+
+
+
+
     def legacy(self):
         """
         This is a legacy routine that uses the red filter camera to locate the apple using one camera
@@ -515,6 +564,8 @@ class MasterNode(Node):
         
 
         self.get_logger().info('Test Complete')
+
+
         return
     
 
@@ -532,6 +583,8 @@ def parse_args():
     parser.add_argument('--tank', action='store_true', help='Run the Tank wheels')
     parser.add_argument('--legacy', action='store_true', help='Run the legacy routine (One Camera with Red Filter)')
     parser.add_argument('--test', action='store_true', help='Run the Test Routine')
+    parser.add_argument('--PickNScoot', type=int, help='Run the PickNScoot routine with the specified value')
+
     parsed_args, unknown = parser.parse_known_args()
     return parsed_args, unknown
 
@@ -546,13 +599,18 @@ def main(args=None):
     """
     parsed_args, unknown = parse_args()
     rclpy.init(args=unknown)
-    node = MasterNode(parsed_args.tank, parsed_args.legacy)
+    if parsed_args.PickNScoot is not None:
+        node = MasterNode(tank=True, legacy=False)
+    else:
+        node = MasterNode(parsed_args.tank, parsed_args.legacy)
     rclpy.spin_once(node, timeout_sec=1.0)
     # Check what routine to run
     if parsed_args.test:
         node.test()
     elif parsed_args.legacy:
         node.legacy()
+    elif parsed_args.PickNScoot is not None:
+        node.PickNScoot(parsed_args.PickNScoot)
     else:
         node.run() # Run the main routine  
 

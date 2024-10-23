@@ -94,6 +94,7 @@ class ZedLocation(Node):
                 # Get the coordinates of the apple from the point cloud
                 # If the apple is within reach, box in red and return that one
                 # Else, box in green and move onto next apple
+                foundValidApple = False
                 for pixel in pixels:
                     x1_p, y1_p, x2_p, y2_p, *_ = pixel
 
@@ -125,32 +126,36 @@ class ZedLocation(Node):
                     if (euclidean_distance > 1.0 or euclidean_distance < 0.65):
                         viewing_mask = cv2.rectangle(self.zed_image, (x1_p, y1_p), (x2_p, y2_p), (0, 255, 0), 5)
                         self.get_logger().info(f'Euclidean distance: {euclidean_distance} unattainable')
-                        continue
+                        
+                    elif not foundValidApple:    
+                        # If the apple is within reach, box in red and return the coordinates
+                        foundValidApple = True
 
-                    # If the apple is within reach, box in red and return the coordinates
+                        # Box in red and publish "mask"
+                        viewing_mask = cv2.rectangle(self.zed_image, (x1_p, y1_p), (x2_p, y2_p), (0, 0, 255), 5)
+                        mask_msg = CvBridge().cv2_to_imgmsg(viewing_mask)
+                        self.maskpublisher.publish(mask_msg)
+                
+                        # Set response values
+                        response.apple_coordinates.x = x_distance
+                        response.apple_coordinates.y = y_distance
+                        response.apple_coordinates.z = z_distance
+                        
+                        # Reset the image and point cloud
+                        self.zed_image = None
+                        self.zed_pointcloud = None
 
-                    # Box in red and publish "mask"
-                    viewing_mask = cv2.rectangle(self.zed_image, (x1_p, y1_p), (x2_p, y2_p), (0, 0, 255), 5)
-                    mask_msg = CvBridge().cv2_to_imgmsg(viewing_mask)
-                    self.maskpublisher.publish(mask_msg)
-            
-                    # Set response values
-                    response.apple_coordinates.x = x_distance
-                    response.apple_coordinates.y = y_distance
-                    response.apple_coordinates.z = z_distance
-                    
-                    # Reset the image and point cloud
-                    self.zed_image = None
-                    self.zed_pointcloud = None
 
+                if foundValidApple:
                     return response
                 
-                # If no valid apples are found, return all zeros and error_status 1
-                self.get_logger().info("No valid apples found.")
-                response.apple_coordinates.x = 0.0
-                response.apple_coordinates.y = 0.0
-                response.apple_coordinates.z = 0.0
-                response.error_status = 1
+                else:
+                    # If no valid apples are found, return all zeros and error_status 1
+                    self.get_logger().info("No valid apples found.")
+                    response.apple_coordinates.x = 0.0
+                    response.apple_coordinates.y = 0.0
+                    response.apple_coordinates.z = 0.0
+                    response.error_status = 1
 
             else: # If no apples are found, return all zeros and error_status 1
                 self.get_logger().info("No apples found.")
