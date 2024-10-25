@@ -6,6 +6,8 @@ from cv_bridge import CvBridge
 from screeninfo import get_monitors
 import numpy as np
 
+from get_pic.save_image import save_image
+
 SIZE_DIVIDER = 3.2
 
 class VideoSubscriber(Node):
@@ -164,6 +166,8 @@ class VideoSubscriber(Node):
     def zed_mask_callback(self, msg):
         self.get_logger().debug('Received a zed mask')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
+        save_image(cv_image, "Zed_Image")
+
         cv_image = self.Resize_to_screen(cv_image)
         if len(cv_image.shape) < 3:
             self.images[3] = cv2.cvtColor(cv_image, cv2.COLOR_GRAY2RGB)

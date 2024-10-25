@@ -18,6 +18,8 @@ import time
 from typing import Tuple
 
 
+SCOOTMOVETIME = 10
+
 class MasterNode(Node):
     """
     This class represents the master node of the system.
@@ -453,7 +455,7 @@ class MasterNode(Node):
                 if i != 0:
                     self.get_logger().info('Moving on...')
                     self.publish_tank_commands(-200, -200)
-                    time.sleep(10)
+                    time.sleep(SCOOTMOVETIME)
                     self.publish_tank_commands(0, 0)
                     self.publish_tank_commands(0, 0) # Twice for good measure
 

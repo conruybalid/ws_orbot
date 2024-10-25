@@ -133,8 +133,6 @@ class ZedLocation(Node):
 
                         # Box in red and publish "mask"
                         viewing_mask = cv2.rectangle(self.zed_image, (x1_p, y1_p), (x2_p, y2_p), (0, 0, 255), 5)
-                        mask_msg = CvBridge().cv2_to_imgmsg(viewing_mask)
-                        self.maskpublisher.publish(mask_msg)
                 
                         # Set response values
                         response.apple_coordinates.x = x_distance
@@ -143,10 +141,13 @@ class ZedLocation(Node):
 
 
                 if foundValidApple:
-                    # Reset the image and point cloud
-                    self.zed_image = None
-                    self.zed_pointcloud = None
-                    return response
+                    pass
+                    # # Reset the image and point cloud
+                    # mask_msg = CvBridge().cv2_to_imgmsg(viewing_mask)
+                    # self.maskpublisher.publish(mask_msg)
+                    # self.zed_image = None
+                    # self.zed_pointcloud = None
+                    # return response
                 
                 else:
                     # If no valid apples are found, return all zeros and error_status 1
