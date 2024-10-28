@@ -8,6 +8,7 @@ import cv2
 from cv_bridge import CvBridge
 import numpy as np
 from typing import Tuple
+import math
 
 from image_processing.ImageProcess import processImage
 
@@ -88,16 +89,16 @@ class ImageProcessingService(Node):
         if self.rgb_image is not None and self.depth_image is not None:
             try:
                 image = image = cv2.cvtColor(self.rgb_image, cv2.COLOR_BGR2RGB) # Swap Red and Blue for input into the AI model
-                pixels = self.AI.GetAppleCoordinates(image, confidence_threshold=0.80) # Get the apple coordinates from the AI model (only ones above the confidence threshold)
+                pixels = self.AI.GetAppleCoordinates(image, confidence_threshold=0.70) # Get the apple coordinates from the AI model (only ones above the confidence threshold)
                 self.get_logger().info('Arm image processed successfully')
 
                 # Create a "mask" image with the boxes drawn around the apples
                 viewing_mask = self.rgb_image
                 for i, (x1_p, y1_p, x2_p, y2_p, conf) in enumerate(pixels):
-                    if i == 0:
-                        viewing_mask = cv2.rectangle(viewing_mask, (x1_p, y1_p), (x2_p, y2_p), (0, 0, 255), 5) # Draw the first apple in red (highest confidence)
-                    else:
-                        viewing_mask = cv2.rectangle(viewing_mask, (x1_p, y1_p), (x2_p, y2_p), (255, 0, 0), 5) # Draw the other apples in blue
+                    # if i == 0:
+                    #     viewing_mask = cv2.rectangle(viewing_mask, (x1_p, y1_p), (x2_p, y2_p), (0, 0, 255), 5) # Draw the first apple in red (highest confidence)
+                    # else:
+                    viewing_mask = cv2.rectangle(viewing_mask, (x1_p, y1_p), (x2_p, y2_p), (255, 0, 0), 5) # Draw the other apples in blue
 
                     viewing_mask = self.drawText(viewing_mask, f"{conf:.3f}", x1_p, y1_p - 3) # Draw the confidence of the apple
 
@@ -107,21 +108,44 @@ class ImageProcessingService(Node):
 
                 # If apples were found, return the coordinates of the first apple (highest confidence)
                 if len(pixels) > 0:
-                        x1_p, y1_p, x2_p, y2_p, *_ = pixels[0]
+                        bestx = 1000
+                        besty = 1000
+                        bestyP1 = 0
+                        bestxP1 = 0
+                        bestyP2 = 0
+                        bestxP2 = 0
+                        bestCenterx = 0
+                        bestCentery = 0
+                        for pixel in pixels:
+                            x1_p, y1_p, x2_p, y2_p, *_ = pixel
 
-                        center_x = int((x1_p + x2_p) / 2)
-                        center_y = int((y1_p + y2_p) / 2)
+                            center_x = int((x1_p + x2_p) / 2)
+                            center_y = int((y1_p + y2_p) / 2)
 
-                        response.error_status = 0
+                            response.error_status = 0
+
+                            dist_x, dist_y = self.pixel_scale(center_x,center_y)
+                            if (math.sqrt(center_x**2 + center_y**2) < math.sqrt(bestx**2 + besty**2)):
+                                bestx = dist_x
+                                besty = dist_y
+                                bestxP1 = x1_p
+                                bestyP1 = y1_p
+                                bestxP2 = x2_p
+                                bestyP2 = y2_p
+                                bestCenterx = center_x
+                                bestCentery = center_y
+
                         
+                        viewing_mask = cv2.rectangle(viewing_mask, (bestxP1, bestyP1), (bestxP2, bestyP2), (0, 0, 255), 5) # Draw the best apple in red
+
                         # convert pixel coordinates to relative arm movement coordinates
-                        response.apple_coordinates.x, response.apple_coordinates.y = self.pixel_scale(center_x, center_y)
+                        response.apple_coordinates.x, response.apple_coordinates.y = float(bestx), float(besty)
 
                         # Find the matching pixel coordinate in the depth image
-                        depth_y = int(center_y * SCALE_Y + OFFSET_Y)
+                        depth_y = int(bestCentery * SCALE_Y + OFFSET_Y)
                         if depth_y > 270: # Make sure the depth_y is within the bounds of the depth image
                             depth_y = 265
-                        depth_x = int(center_x * SCALE_X + OFFSET_X)
+                        depth_x = int(bestCenterx * SCALE_X + OFFSET_X)
                         if depth_x > 480: # Make sure the depth_x is within the bounds of the depth image
                             depth_x = 475
 
