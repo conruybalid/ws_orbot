@@ -282,6 +282,8 @@ class MasterNode(Node):
                 move_msg.position.z = 0.0
             else:
                 self.get_logger().info(f'Apple Centered. Moving to {apple_coordinates.x}, {apple_coordinates.y}, {apple_coordinates.z}')
+                if not (move_msg.position.z > 0.0):
+                    return False
             
             move_msg.angle.x = 0.0
             move_msg.angle.y = 0.0
@@ -294,7 +296,9 @@ class MasterNode(Node):
             move_goal.goal = move_msg
 
             # Publish Arm Movement
-            self.send_move_goal(move_goal)
+            if not self.send_move_goal(move_goal):
+                return False
+            # self.send_move_goal(move_goal)
             self.get_logger().debug(f'moved {move_msg.position.x} in x, {move_msg.position.y} in y')
         
         
@@ -556,14 +560,17 @@ class MasterNode(Node):
         """
         self.get_logger().info('Testing')
     
-        self.send_move_goal(self.foward_home)
-        self.send_move_goal(self.right_home)
 
-        self.send_move_goal(self.format_move_goal(position=[-0.4, 0.2, 0.0], angle=[0.0, 90.0, 180.0], gripper_state=1, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))
-
-        self.send_move_goal(self.foward_home)
-
+        # Center the apple
+        self.get_logger().info('Centering Apple')
+        if not self.center_apple():
+            self.get_logger().error('Failed to center apple')
+            self.send_preset_goal(self.home)
         
+        else:
+            self.grab_apple()
+            self.send_preset_goal(self.home)
+
 
         self.get_logger().info('Test Complete')
 
@@ -603,6 +610,8 @@ def main(args=None):
     rclpy.init(args=unknown)
     if parsed_args.PickNScoot is not None:
         node = MasterNode(tank=True, legacy=False)
+    elif parsed_args.test:
+        node = MasterNode(tank=False, legacy=True)
     else:
         node = MasterNode(parsed_args.tank, parsed_args.legacy)
     rclpy.spin_once(node, timeout_sec=1.0)
