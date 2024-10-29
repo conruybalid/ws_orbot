@@ -89,7 +89,7 @@ class ImageProcessingService(Node):
         if self.rgb_image is not None and self.depth_image is not None:
             try:
                 image = image = cv2.cvtColor(self.rgb_image, cv2.COLOR_BGR2RGB) # Swap Red and Blue for input into the AI model
-                pixels = self.AI.GetAppleCoordinates(image, confidence_threshold=0.70) # Get the apple coordinates from the AI model (only ones above the confidence threshold)
+                pixels = self.AI.GetAppleCoordinates(image, confidence_threshold=0.75) # Get the apple coordinates from the AI model (only ones above the confidence threshold)
                 self.get_logger().info('Arm image processed successfully')
 
                 # Create a "mask" image with the boxes drawn around the apples

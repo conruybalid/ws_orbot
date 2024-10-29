@@ -227,24 +227,29 @@ class MasterNode(Node):
             self.home = 'Home Right'
         else:
             self.get_logger().info('Apple to the left, using forward home')
-            self.home = 'Home'
+            self.home = 'Home Left'
 
-        self.send_preset_goal(self.home)#WARNING: This preset does not check for collisions
-        
-        x = point.x
-        y = point.y
-        z = point.z 
-        
-        self.get_logger().info(f'Apple at {x}, {y}, {z}')
+        if (self.send_preset_goal(self.home)):#WARNING: This preset does not check for collisions
+            
+            
+            x = point.x
+            y = point.y
+            z = point.z 
+            
+            self.get_logger().info(f'Apple at {x}, {y}, {z}')
 
-        #Adjust coordinates so that the camera can see the apple
-        if (self.send_move_goal(self.format_move_goal(position=[x, y - 0.025, z - 0.2], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))):
-            self.get_logger().info('Moved to apple location')
+            #Adjust coordinates so that the camera can see the apple
+            if (self.send_move_goal(self.format_move_goal(position=[x, y - 0.025, z - 0.2], angle=[0.0, 90.0, 90.0], gripper_state=0, reference_frame=Base_pb2.CARTESIAN_REFERENCE_FRAME_BASE))):
+                self.get_logger().info('Moved to apple location')
+            else:
+                self.get_logger().error('Failed to move to apple location')
+                return False
+
+            return True
+        
         else:
-            self.get_logger().error('Failed to move to apple location')
+            self.get_logger().error('Failed to move to preset')
             return False
-
-        return True
     
 
 
@@ -440,7 +445,7 @@ class MasterNode(Node):
                 self.publish_tank_commands(0, 0)
 
             # Return to home position
-            self.send_preset_goal('Home')
+            self.send_preset_goal(self.home)
 
     
         return
