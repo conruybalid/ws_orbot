@@ -106,12 +106,14 @@ class ImageProcessingService(Node):
                 if len(pixels) > 0:
                         bestx = 1000
                         besty = 1000
+                        bestz = -1
                         bestyP1 = 0
                         bestxP1 = 0
                         bestyP2 = 0
                         bestxP2 = 0
                         bestCenterx = 0
                         bestCentery = 0
+                        
                         for pixel in pixels:
                             x1_p, y1_p, x2_p, y2_p, *_ = pixel
 
@@ -122,9 +124,16 @@ class ImageProcessingService(Node):
 
                             dist_x, dist_y = self.pixel_scale(center_x,center_y)
 
-                            if (math.sqrt(dist_x**2 + dist_y**2) < math.sqrt(bestx**2 + besty**2)):
+                            dist_z = self.get_depth(x1_p,x2_p,y1_p,y2_p)
+
+                            if dist_z > 0.4:
+                                viewing_mask = cv2.rectangle(viewing_mask, (x1_p, y1_p), (x2_p, y2_p), (0, 255, 0), 5) # Draw far apple in green
+
+
+                            elif (math.sqrt(dist_x**2 + dist_y**2) < math.sqrt(bestx**2 + besty**2)):
                                 bestx = dist_x
                                 besty = dist_y
+                                bestz = dist_z
                                 bestxP1 = x1_p
                                 bestyP1 = y1_p
                                 bestxP2 = x2_p
@@ -135,12 +144,11 @@ class ImageProcessingService(Node):
                         
                         viewing_mask = cv2.rectangle(viewing_mask, (bestxP1, bestyP1), (bestxP2, bestyP2), (0, 0, 255), 5) # Draw the best apple in red
 
-                        # Publish the "mask" image
-                        mask_msg = CvBridge().cv2_to_imgmsg(viewing_mask)
-                        self.Masked_publisher.publish(mask_msg)
+                        
 
                         # convert pixel coordinates to relative arm movement coordinates
                         response.apple_coordinates.x, response.apple_coordinates.y = float(bestx), float(besty)
+                        response.apple_coordinates.z = float(bestz)
 
                         # # Find the matching pixel coordinate in the depth image
                         # depth_y = int(bestCentery * SCALE_Y + OFFSET_Y)
@@ -149,38 +157,44 @@ class ImageProcessingService(Node):
                         # depth_x = int(bestCenterx * SCALE_X + OFFSET_X)
                         # if depth_x > 480: # Make sure the depth_x is within the bounds of the depth image
                         #     depth_x = 475
-                        depth_x1 = int(bestxP1 * SCALE_X + OFFSET_X)
-                        if depth_x1 > 480:
-                            depth_x1 = 475
-                        depth_x2 = int(bestxP2 * SCALE_X + OFFSET_X)
-                        if depth_x2 > 480:
-                            depth_x2 = 475
-                        depth_y1 = int(bestyP1 * SCALE_Y + OFFSET_Y)
-                        if depth_y1 > 270:
-                            depth_y1 = 265
-                        depth_y2 = int(bestyP2 * SCALE_Y + OFFSET_Y)
-                        if depth_y2 > 270:
-                            depth_y2 = 265
+                        # depth_x1 = int(bestxP1 * SCALE_X + OFFSET_X)
+                        # if depth_x1 > 480:
+                        #     depth_x1 = 475
+                        # depth_x2 = int(bestxP2 * SCALE_X + OFFSET_X)
+                        # if depth_x2 > 480:
+                        #     depth_x2 = 475
+                        # depth_y1 = int(bestyP1 * SCALE_Y + OFFSET_Y)
+                        # if depth_y1 > 270:
+                        #     depth_y1 = 265
+                        # depth_y2 = int(bestyP2 * SCALE_Y + OFFSET_Y)
+                        # if depth_y2 > 270:
+                        #     depth_y2 = 265
 
-                        # # Extract the sub-array
-                        # sub_array = self.depth_image[depth_y - 10: depth_y + 10, depth_x - 10: depth_x + 10]
-                        sub_array = self.depth_image[depth_y1: depth_y2, depth_x1: depth_x2]
-                        self.get_logger().info(f"Sub-array: {sub_array}")
+                        # x_quarter = int( (depth_x2 - depth_x1) / 4)
+                        # y_quarter = int ( (depth_y2 - depth_y1) / 4)
 
-                        # Filter out NaN and Inf values
-                        filtered_array = sub_array[np.isfinite(sub_array) & (sub_array != 0)]
-                        self.get_logger().info(f"Filtered array: {filtered_array}")
+                        # # # Extract the sub-array
+                        # # sub_array = self.depth_image[depth_y - 10: depth_y + 10, depth_x - 10: depth_x + 10]
+                        # sub_array = self.depth_image[depth_y1+y_quarter: depth_y2-y_quarter, depth_x1+x_quarter: depth_x2-x_quarter]
+                        # self.get_logger().info(f"Sub-array: {sub_array}")
 
-                        # Get the average depth of the surrounding pixels in the depth image
-                        average_depth = np.mean(filtered_array)
+                        # # Filter out NaN and Inf values
+                        # filtered_array = sub_array[np.isfinite(sub_array) & (sub_array != 0)]
+                        # self.get_logger().info(f"Filtered array: {filtered_array}")
+
+                        # # Get the average depth of the surrounding pixels in the depth image
+                        # average_depth = np.mean(filtered_array)
                         
 
-                        response.apple_coordinates.z = average_depth / 1000.0 - 0.12 # Convert the depth from mm to m and subtract distance from camera to gripper
+                        # response.apple_coordinates.z = average_depth / 1000.0 - 0.15 # Convert the depth from mm to m and subtract distance from camera to gripper
 
                 else: # If no apples were found, return the failed_coordinates object and error_status 1
                     response.apple_coordinates = failed_coordinates
                     response.error_status = 1
 
+                # Publish the "mask" image
+                mask_msg = CvBridge().cv2_to_imgmsg(viewing_mask)
+                self.Masked_publisher.publish(mask_msg)
                 self.rgb_image = None
                 return response
 
@@ -240,6 +254,39 @@ class ImageProcessingService(Node):
         yChange = 0.00025*yDist
 
         return xChange, yChange
+    
+    def get_depth(self,x1,x2,y1,y2):
+        depth_x1 = int(x1 * SCALE_X + OFFSET_X)
+        if depth_x1 > 480:
+            depth_x1 = 475
+        depth_x2 = int(x2 * SCALE_X + OFFSET_X)
+        if depth_x2 > 480:
+            depth_x2 = 475
+        depth_y1 = int(y1 * SCALE_Y + OFFSET_Y)
+        if depth_y1 > 270:
+            depth_y1 = 265
+        depth_y2 = int(y2 * SCALE_Y + OFFSET_Y)
+        if depth_y2 > 270:
+            depth_y2 = 265
+
+        x_quarter = int( (depth_x2 - depth_x1) / 4)
+        y_quarter = int ( (depth_y2 - depth_y1) / 4)
+
+        # # Extract the sub-array
+        # sub_array = self.depth_image[depth_y - 10: depth_y + 10, depth_x - 10: depth_x + 10]
+        sub_array = self.depth_image[depth_y1+y_quarter: depth_y2-y_quarter, depth_x1+x_quarter: depth_x2-x_quarter]
+        #self.get_logger().info(f"Sub-array: {sub_array}")
+
+        # Filter out NaN and Inf values
+        filtered_array = sub_array[np.isfinite(sub_array) & (sub_array != 0)]
+        #self.get_logger().info(f"Filtered array: {filtered_array}")
+
+        # Get the average depth of the surrounding pixels in the depth image
+        average_depth = np.mean(filtered_array)
+        
+
+        return average_depth / 1000.0 - 0.15 # Convert the depth from mm to m and subtract distance from camera to gripper
+
     
             
 

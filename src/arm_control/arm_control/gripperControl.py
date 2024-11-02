@@ -74,7 +74,7 @@ class GripperCommand:
             position += 0.02    # Increment position
             finger.value = position # Set the new position
             self.base.SendGripperCommand(gripper_command) # Send the command
-            time.sleep(0.1) # Give the gripper a chance to reach the commanded position
+            time.sleep(0.175) # Give the gripper a chance to reach the commanded position
         
         return
 

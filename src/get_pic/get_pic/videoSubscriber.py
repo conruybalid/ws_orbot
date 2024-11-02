@@ -135,6 +135,7 @@ class VideoSubscriber(Node):
     def arm_mask_callback(self, msg):
         self.get_logger().debug('Received an arm camera mask')
         cv_image = self.bridge.imgmsg_to_cv2(msg)
+        save_image(cv_image, "Arm_Image")
         cv_image = self.Resize_to_screen(cv_image)
         if len(cv_image.shape) < 3:
             self.images[1] = cv2.cvtColor(cv_image, cv2.COLOR_GRAY2RGB)

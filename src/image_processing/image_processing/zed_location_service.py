@@ -116,7 +116,7 @@ class ZedLocation(Node):
 
                     # Convert the coordinates to meters in reference to arm base
                     x_distance = (-x - 361) / 1000
-                    y_distance = (-y + 785) / 1000
+                    y_distance = (-y + 795) / 1000
                     z_distance = (z - 175) / 1000
 
                     self.get_logger().info(f'x_distance: {x_distance}, y_distance: {y_distance}, z_distance: {z_distance}')

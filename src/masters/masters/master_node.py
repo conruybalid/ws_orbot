@@ -288,6 +288,7 @@ class MasterNode(Node):
             else:
                 self.get_logger().info(f'Apple Centered. Moving to {apple_coordinates.x}, {apple_coordinates.y}, {apple_coordinates.z}')
                 if not (move_msg.position.z > 0.0):
+                    self.get_logger().warn("Rejecting Move, Distance was not greater than zero")
                     return False
             
             move_msg.angle.x = 0.0
