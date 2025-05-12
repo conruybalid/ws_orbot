@@ -97,6 +97,26 @@ class GripperCommand:
             else:
                 time.sleep(0.1) # Wait a bit before checking again
         return
+    
+    def SetGripper(self, position: float):
+        """
+        Opens or closes the gripper to the specified position.
+        """
+        gripper_command = Base_pb2.GripperCommand() # Create a gripper command
+        gripper_request = Base_pb2.GripperRequest() # Create a gripper request (for information)
+        finger = gripper_command.gripper.finger.add()
+        gripper_command.mode = Base_pb2.GRIPPER_POSITION # command mode is position
+        gripper_request.mode = Base_pb2.GRIPPER_POSITION # feedback mode is position
+        finger.value = position
+        self.base.SendGripperCommand(gripper_command)
+        # up to ten checks to see if the gripper is at position before giving up
+        for _ in range(10):
+            currentPosition = self.base.GetMeasuredGripperMovement(gripper_request).finger[0].value
+            if (currentPosition < position + 0.01 and currentPosition > position - 0.01):
+                break # Gripper is at the position
+            else:
+                time.sleep(0.1) # Wait a bit before checking again
+        return
             
             
 
@@ -111,7 +131,8 @@ def main():
     with utilities.DeviceConnection.createTcpConnection(args) as router:
         example = GripperCommand(router)
         example.OpenGripper()
-        example.GripApple()
+        # example.GripApple()
+        example.SetGripper(0.55)
 
 if __name__ == "__main__":
     main()

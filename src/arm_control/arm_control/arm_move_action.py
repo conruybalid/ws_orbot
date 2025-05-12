@@ -75,7 +75,6 @@ class MoveArmServer(Node):
         self.gripper_control = GripperCommand(self.router)
 
 
-
     def FormatWaypoint(self, waypointInformation: MoveArm.Goal, feedback: BaseCyclic_pb2.Feedback) -> Base_pb2.CartesianWaypoint: # type: ignore
         """
         Format the waypoint information based on the reference frame.
@@ -211,7 +210,8 @@ class MoveArmServer(Node):
 
             # Close Gripper
             elif gripper_state == 2:
-                self.gripper_control.GripApple() # Closes the gripper incrementally to avoid crushing apple
+                # self.gripper_control.GripApple() # Closes the gripper incrementally to avoid crushing apple
+                self.gripper_control.SetGripper(0.55) # Closes the gripper to a set position
                 self.get_logger().info('Gripper closed')
 
             else:
@@ -228,7 +228,7 @@ class MoveArmServer(Node):
                 goal_handle.succeed()
             
             return result
-    
+
 
     def execute_preset_callback(self, goal_handle) -> ArmPreset.Result:
         """

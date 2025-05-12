@@ -191,6 +191,63 @@ def move_trajectory(base, base_cyclic, waypointsDefinition: Base_pb2.CartesianWa
         print("Error found in trajectory") 
         result.trajectory_error_report.PrintDebugString();
 
+def move_trajectory_Record(base, base_cyclic, waypointsDefinition: Base_pb2.CartesianWaypoint): # type: ignore
+    """
+    Moves the robot arm to the specified cartesian waypoint
+    """
+    
+    from FileRecorder import FileRecorder
+
+    file = FileRecorder()
+
+    # Set up
+    base_servo_mode = Base_pb2.ServoingModeInformation()
+    base_servo_mode.servoing_mode = Base_pb2.SINGLE_LEVEL_SERVOING
+    base.SetServoingMode(base_servo_mode)
+    
+    waypoints = Base_pb2.WaypointList()
+    
+    waypoints.duration = 0.0
+    waypoints.use_optimal_blending = True
+    
+    waypoint = waypoints.waypoints.add()
+    waypoint.name = "waypoint"   
+    waypoint.cartesian_waypoint.CopyFrom(waypointsDefinition)
+
+
+    # Verify validity of waypoints
+    result = base.ValidateWaypointList(waypoints)
+
+    if(len(result.trajectory_error_report.trajectory_error_elements) == 0):
+
+        print("Beginning Trajectory ...")
+        e_opt = threading.Event()
+        notification_handle_opt = base.OnNotificationActionTopic(   check_for_end_or_abort(e_opt),
+                                                            Base_pb2.NotificationOptions())
+
+        waypoints.use_optimal_blending = True
+        base.ExecuteWaypointTrajectory(waypoints)
+
+        print("Waiting for trajectory to finish ...")
+        #finished_opt = e_opt.wait(TIMEOUT_DURATION)
+        while(not e_opt.is_set()):
+            feedback = base_cyclic.RefreshFeedback()
+            file.RecordPosition([feedback.base.tool_pose_x, feedback.base.tool_pose_y, feedback.base.tool_pose_z])
+        base.Unsubscribe(notification_handle_opt)
+
+        finished_opt = e_opt.is_set()
+
+        if(finished_opt):
+            print("Cartesian trajectory with optimization completed ")
+        else:
+            print("Timeout on action notification wait for optimized trajectory")
+
+        return finished_opt
+        
+    else:
+        print("Error found in trajectory") 
+        result.trajectory_error_report.PrintDebugString();
+
 
 
 """
@@ -284,7 +341,12 @@ def test():
 
         success &= move_to_home_position(base)
 
-        success &= move_to_preset_position(base, "Home Right")
+        success &= move_to_preset_position(base, "Home Left")
+
+        waypointsDefinition = (0.5, 0.3, 0.7, 0.0, 90.0, 0.0, 90.0)
+        waypointsDefinition = populateCartesianCoordinate(waypointsDefinition)
+
+        success &= move_trajectory_Record(base, base_cyclic, waypointsDefinition)
 
         return 0 if success else 1
 

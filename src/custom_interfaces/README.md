@@ -24,6 +24,11 @@ reference_frame # 2 for gripper, 3 for base of arm
 gripper_state # 0 for no change, 1 to open, 2 to close
 ```
 
+example terminal command
+```console
+ros2 action send_goal /move_arm_waypoint custom_interfaces/action/MoveArm "{goal: {position: {x: 0.5, y: 0.5, z: 0.5}, angle: {x: 0, y: 90, z: 90}, reference_frame: 3, gripper_state: 0}}"
+```
+
 ## Services
 
 ### GetLocation

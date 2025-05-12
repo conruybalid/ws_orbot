@@ -17,6 +17,8 @@ import time
 
 from typing import Tuple
 
+from masters.Timing import OrbotTimer
+
 
 SCOOTMOVETIME = 10
 
@@ -74,6 +76,8 @@ class MasterNode(Node):
             self.tank_comand_publisher = self.create_publisher(Tank, 'move_tank_commands', 10)
 
         self.home: str = 'Home'
+
+        # self.TimeData = OrbotTimer()
 
         self.get_logger().info('Master Node Initialized')
 
@@ -208,9 +212,11 @@ class MasterNode(Node):
         Then it will move the arm to that location.
         """
         self.get_logger().debug('Asking Zed Camera for Apple Location')
+
+        # self.TimeData.RecordTime(0)
              
         error_status, point = self.call_zed_service()
-        
+
         if error_status == 3:
             for _ in range(3):
                 time.sleep(1) 
@@ -221,7 +227,7 @@ class MasterNode(Node):
         if error_status != 0:
             self.process_service_error(error_status)
             return False
-        
+
         if point.x < 0.0:
             self.get_logger().info('Apple to the right: using right home')
             self.home = 'Home Right'
@@ -337,6 +343,7 @@ class MasterNode(Node):
             else:
                 # All movements were successful
                 self.get_logger().info('finished pick apple movements')
+                # self.TimeData.RecordTime(5)
 
             
             # Drop off apple
@@ -420,6 +427,7 @@ class MasterNode(Node):
         
 
         try:
+            # self.TimeData.RestartTimer()
             while True: # only broken on keyboard interrupt or error
 
                 if self.tank:
@@ -427,14 +435,19 @@ class MasterNode(Node):
                     self.move_tank()
                 
                 while self.Go_to_Apple(): # Broken if Go to Apple fails (no apples found)
-
+                    # self.TimeData.RecordTime(1)
                     # Center the apple
                     self.get_logger().info('Centering Apple')
+                    # self.TimeData.RecordTime(2)
                     if not self.center_apple():
                         self.send_preset_goal(self.home)
+                        self.TimeData.RecordRow()
                         continue
-                    
+                    # self.TimeData.RecordTime(3)
+                    # self.TimeData.RecordTime(4)
                     self.grab_apple()
+
+                    # self.TimeData.RecordRow()
 
 
         except KeyboardInterrupt:
@@ -582,7 +595,6 @@ class MasterNode(Node):
 
 
         return
-    
 
 
 """
