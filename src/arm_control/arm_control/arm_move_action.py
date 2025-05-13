@@ -14,9 +14,10 @@ from kortex_api.autogen.client_stubs.BaseCyclicClientRpc import BaseCyclicClient
 
 from kortex_api.autogen.messages import Base_pb2, BaseCyclic_pb2
 
-from arm_control.moveArm import move_to_home_position, move_to_preset_position, move_trajectory
+from arm_control.moveArm import move_to_home_position, move_to_preset_position, move_trajectory, move_trajectory_Record
 from arm_control.gripperControl import GripperCommand
 
+from arm_control.FileRecorder import FileRecorder
 
 class MoveArmServer(Node):
     """
@@ -73,6 +74,8 @@ class MoveArmServer(Node):
         self.get_logger().info('Moved to home position')
 
         self.gripper_control = GripperCommand(self.router)
+
+        # self.csvFile = FileRecorder()
 
 
     def FormatWaypoint(self, waypointInformation: MoveArm.Goal, feedback: BaseCyclic_pb2.Feedback) -> Base_pb2.CartesianWaypoint: # type: ignore
@@ -164,6 +167,7 @@ class MoveArmServer(Node):
 
             try:
                 success &= move_trajectory(base, base_cyclic, waypointsDefinition)
+                # success &= move_trajectory_Record(base, base_cyclic, waypointsDefinition, self.csvFile)
             except:
                 self.get_logger().error(f'Error in trajectory: {point.x}, {point.y}, {point.z}')
                 goal_handle.abort()

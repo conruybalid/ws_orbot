@@ -29,6 +29,12 @@ from kortex_api.autogen.client_stubs.BaseCyclicClientRpc import BaseCyclicClient
 
 from kortex_api.autogen.messages import Base_pb2, BaseCyclic_pb2, Common_pb2
 
+try:
+    from arm_control.FileRecorder import FileRecorder
+except:
+    from FileRecorder import FileRecorder
+
+
 # Maximum allowed waiting time during actions (in seconds)
 TIMEOUT_DURATION = 30
 
@@ -191,14 +197,13 @@ def move_trajectory(base, base_cyclic, waypointsDefinition: Base_pb2.CartesianWa
         print("Error found in trajectory") 
         result.trajectory_error_report.PrintDebugString();
 
-def move_trajectory_Record(base, base_cyclic, waypointsDefinition: Base_pb2.CartesianWaypoint): # type: ignore
+def move_trajectory_Record(base, base_cyclic, waypointsDefinition: Base_pb2.CartesianWaypoint, file: FileRecorder = None): # type: ignore
     """
     Moves the robot arm to the specified cartesian waypoint
     """
     
-    from FileRecorder import FileRecorder
-
-    file = FileRecorder()
+    if file is None:
+        file = FileRecorder()
 
     # Set up
     base_servo_mode = Base_pb2.ServoingModeInformation()

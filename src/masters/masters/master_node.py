@@ -441,7 +441,7 @@ class MasterNode(Node):
                     # self.TimeData.RecordTime(2)
                     if not self.center_apple():
                         self.send_preset_goal(self.home)
-                        self.TimeData.RecordRow()
+                        # self.TimeData.RecordRow()
                         continue
                     # self.TimeData.RecordTime(3)
                     # self.TimeData.RecordTime(4)
