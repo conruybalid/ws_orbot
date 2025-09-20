@@ -1,3 +1,30 @@
+# Running the Current System
+
+Use a the peripheral_launch launch file to start
+- video_publisher node (arm camera)
+- zed_publisher node (zed camera)
+- arm_location_service node (service to identify apples from arm camera)
+- zed_location_service node (service to identify apples from zed camera)
+- video_subscriber node (both cameras) (used for debug)
+- arm_move_action (action node to move the arm)
+```console
+ros2 launch launch/peripheral_launch.py
+```
+
+In a new terminal, start the master_node node (begin pick apple routine)
+```console
+ros2 run masters master_node
+```
+
+Don't forget to source each new terminal with
+```console
+source install/setup.bash
+```
+
+## Saving Images
+
+For research purposes, you may want to save the images captured by the robot. Image saving is handled by the video_subscriber node in the get_pics package and is saved in ```~/Desktop/Images/<date>```. To enable or disable image saving for each image type, uncomment or commment the ```save_image(cv_image, \<filename\>)``` line in each callback function in ```src/get_pic/get_pic/videoSubscriber.py```. More info can be found in ```src/get_pic/get_pic/README.md``` 
+
 # Using the Workspace
 ## Building Packages
 
@@ -122,30 +149,6 @@ ros2 interface show custom_interfaces/msg/ArmControl
 ```console
 rqt_graph
 ```
-
-# Running the Current System
-
-Use a the peripheral_launch launch file to start
-- video_publisher node (arm camera)
-- zed_publisher node (zed camera)
-- arm_location_service node (service to identify apples from arm camera)
-- zed_location_service node (service to identify apples from zed camera)
-- video_subscriber node (both cameras) (used for debug)
-- arm_move_action (action node to move the arm)
-```console
-ros2 launch launch/peripheral_launch.py
-```
-
-In a new terminal, start the master_node node (begin pick apple routine)
-```console
-ros2 run masters master_node
-```
-
-Don't forget to source each new terminal with
-```console
-source install/setup.bash
-```
-
 
 # Creating your Own Stuff
 
