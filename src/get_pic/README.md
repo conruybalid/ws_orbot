@@ -64,7 +64,7 @@ This script was used to test the ZED camera and get 3D coordinates from a mouse 
 
 ## save_image.py
 
-This file contains a method used to save an image file. It takes the image and desired filename for the image as arguments and currently saves them to "~/Desktop/Images/\<date\>". Each folder and image file is named by date it was saved.
+This file contains a method used to save an image file. It takes the image and desired filename for the image as arguments and currently saves them to ```~/Desktop/Images/\<date\>```. Each folder and image file is named by date it was saved.
 
 
 
